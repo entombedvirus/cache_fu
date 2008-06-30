@@ -151,14 +151,19 @@ module ActsAsCached
         cache_store(:get, cache_key(cache_id))
       end
     end
-
+    
+    def cache_finder
+      cache_config[:finder] || :find
+    end
+    
     def fetch_cachable_data(cache_id = nil)
-      finder = cache_config[:finder] || :find
-      return send(finder) unless cache_id
+      return send(cache_finder) unless cache_id
 
       args = [cache_id]
       args << cache_options.dup unless cache_options.blank?
-      send(finder, *args)
+      # results = cache_id.is_a?(Array) ? send("find_all_by_#{cache_config[:cache_id]}".to_sym, *args) : send(cache_finder, *args)
+      # results
+      send(cache_finder, *args)
     end
     
     def cache_namespace
@@ -196,19 +201,19 @@ module ActsAsCached
 
     def swallow_or_raise_cache_errors(load_constants = false, &block)
       load_constants ? autoload_missing_constants(&block) : yield
+    rescue NoMethodError, ArgumentError, MemCache::MemCacheError => error
+      if ActsAsCached.config[:raise_errors]
+        raise error
+      else
+        RAILS_DEFAULT_LOGGER.debug "MemCache Error: #{error.message}" rescue nil
+        nil
+      end
     rescue TypeError => error
       if error.to_s.include? 'Proc' 
         raise MarshalError, "Most likely an association callback defined with a Proc is triggered, see http://ar.rubyonrails.com/classes/ActiveRecord/Associations/ClassMethods.html (Association Callbacks) for details on converting this to a method based callback" 
       else
         raise error
       end
-    rescue Exception => error
-      if ActsAsCached.config[:raise_errors]
-        raise error
-      else
-        RAILS_DEFAULT_LOGGER.debug "MemCache Error: #{error.message}" rescue nil
-        nil
-      end      
     end
 
     def autoload_missing_constants
@@ -277,7 +282,7 @@ module ActsAsCached
       set_cache
     end
 
-    # Lourens Naud
+    # Lourens Naudé
     def expire_cache_with_associations(*associations_to_sweep)
       (Array(cache_options[:include]) + associations_to_sweep).flatten.uniq.compact.each do |assoc|
         Array(send(assoc)).compact.each { |item| item.expire_cache if item.respond_to?(:expire_cache) }

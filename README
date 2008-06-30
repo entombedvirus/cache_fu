@@ -2,6 +2,37 @@
 
 A rewrite of acts_as_cached.
 
+== Changes from Chis Wanstrath's Repo (2008-06-29) Rohith Ravi (entombedvirus [at] gmail)
+
+- Extended the work of kykim (http://github.com/kykim/cache_fu/tree) to support cached associations.
+
+- When User.has_many_cached :cats, you can now call user.cached_cats to retrieve a copy of the user's cats, while caching the cat
+  id list to memcache.
+
+- When individual cat objects are saved/destroyed, corresponding user's cache is updated so that cached associations won't be stale.
+
+- has_many :through relationships are also supported. For example: When a User.has_many_cached :cats, :through => :ownerships,
+  Saving and destroying Ownership objects will update the corresponding User's cache.
+  
+- Similarly, has_one_cached and belongs_to_cached is also supported.
+
+== Usage
+
+class User < ActiveRecord::Base
+  has_many_cached :cats
+end
+
+class Cat < ActiveRecord::Base
+  belongs_to_cached :user
+end
+
+
+./script/console
+
+>> u = User.find(:first)
+>> u.cached_cats
+>> u.cached_cats.first.cached_user
+
 == Changes from acts_as_cached 1
 
 - You can no longer set a 'ttl' method on a class.  Instead,

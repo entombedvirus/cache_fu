@@ -6,6 +6,7 @@ $LOAD_PATH.unshift 'lib/'
 
 begin
   require 'rubygems'
+  require 'ruby-debug'
   gem 'mocha', '>= 0.4.0'
   require 'mocha'
   gem 'test-spec', '= 0.3.0'

@@ -1,19 +1,12 @@
-begin
-  require 'memcache'
-rescue LoadError
-end
-
-begin
-  require 'memcached'
-rescue LoadError
-end
+require 'memcache'
+puts "=> You should be using the `memcache-client' gem.  You're using RubyMemcache!" if Object.const_defined?(:RubyMemcache)
 
 begin
   require 'mem_cache_with_consistent_hashing'
 rescue LoadError
+else
+  puts "=> MemCacheWithConsistentHashing being used."
 end
-
-puts "=> You should be using the `memcache-client' gem.  You're using RubyMemcache!" if Object.const_defined?(:RubyMemcache)
 
 require 'acts_as_cached'
 
