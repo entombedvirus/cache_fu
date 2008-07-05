@@ -39,6 +39,11 @@ module ActsAsCached
         cached_association_id
       end
       
+      define_method("cached_#{ids_reflection}=") do |cached_association_id|
+        self.class.cache_store(:set, "#{self.cache_key}:#{ids_reflection}", cached_association_id)
+        instance_variable_set("@cached_#{reflection.name}", nil)
+      end
+      
       define_method("cached_#{reflection.name}") do |*params|
         reload_from_cache = params.first
         association = instance_variable_get("@cached_#{reflection.name}")
@@ -78,7 +83,12 @@ module ActsAsCached
 
         cached_association
       end
-
+      
+      define_method("cached_#{ids_reflection}=") do |cached_association_id|
+        self.class.cache_store(:set, "#{self.cache_key}:#{ids_reflection}", cached_association_id)
+        instance_variable_set("@cached_#{reflection.name}", nil)
+      end
+      
       define_method("cached_#{reflection.name}") do |*params|
         reload_from_cache = params.first
         association = instance_variable_get("@cached_#{reflection.name}")

@@ -92,4 +92,17 @@ context "A User class acting as cached with has_many_cached :cats" do
     @user.cached_cats.should.equal(@cats)
     4.times {@user.cached_cats(true).should.equal(@cats)}
   end
+  
+  specify "should be able to override cached cat ids manually" do
+    @user.cached_cats.should.equal(@cats)
+    @user.cached_cat_ids.should.equal([1, 2])
+    
+    @other_cat = HasManyCachedSpecSetup::Cat.new(:id => 3, :name => "Man Eating Cat", :user_id => 1)
+    HasManyCachedSpecSetup::Cat.expects(:find).with(%w(3)).returns(@other_cat)
+    @user.cached_cat_ids = [3]
+    
+    @user.cached_cats.should.equal([@other_cat])
+    # We're just changing the cache, the association in db should still point to the old cats
+    @user.cat_ids.should.equal([1, 2])
+  end
 end
