@@ -5,7 +5,15 @@ module ActsAsCached
       reflection = self.reflections[association_id]
       
       define_method("cached_#{reflection.name}") do |*params|
-        reflection.klass.get_cache(self.send(reflection.primary_key_name))        
+        reload_from_cache = params.first
+        association = instance_variable_get("@cached_#{reflection.name}")
+        
+        if association.nil? || reload_from_cache
+          association = reflection.klass.get_cache(self.send(reflection.primary_key_name))
+          instance_variable_set("@cached_#{reflection.name}", association)
+        end        
+        
+        association
       end
     end
 
@@ -25,17 +33,23 @@ module ActsAsCached
           end
 
           return nil  if cached_association_id.nil?
-          self.class.cache_store(:set, "#{self.cache_key}:#{reflection.name}_id", cached_association_id)
+          self.class.cache_store(:set, "#{self.cache_key}:#{ids_reflection}", cached_association_id)
         end
 
         cached_association_id
       end
       
       define_method("cached_#{reflection.name}") do |*params|
-        cached_association_id = send("cached_#{ids_reflection}", *params)
+        reload_from_cache = params.first
+        association = instance_variable_get("@cached_#{reflection.name}")
         
-        return nil unless cached_association_id
-        reflection.klass.get_cache(cached_association_id)
+        if association.nil? || reload_from_cache
+          association = send("cached_#{ids_reflection}", *params)
+          association = reflection.klass.get_cache(association) if association
+          instance_variable_set("@cached_#{reflection.name}", association)
+        end
+        
+        association
       end
       
       add_has_one_klass_callbacks!(reflection, ids_reflection)
@@ -66,18 +80,29 @@ module ActsAsCached
       end
 
       define_method("cached_#{reflection.name}") do |*params|
-        # puts reflection.inspect
-        cached_association_ids = send("cached_#{ids_reflection}", *params)
+        reload_from_cache = params.first
+        association = instance_variable_get("@cached_#{reflection.name}")
         
-        # Possible GOTCHA: Hash#values does not preserve order. Hence, the associated objects
-        # returned by the next line might be in a different order than their respective
-        # ids in cached_association_ids
-        cached_association_ids.compact!
-        return [] unless (cached_association_ids && cached_association_ids.size > 0)
-        assoc_objs = reflection.klass.get_caches(cached_association_ids)
-        cached_association = assoc_objs.is_a?(Hash) ? assoc_objs.values : assoc_objs
-        cached_association = cached_association.is_a?(Array) ? cached_association : [cached_association]
-        cached_association.flatten.compact
+        if association.nil? || reload_from_cache
+          cached_association_ids = send("cached_#{ids_reflection}", *params)
+          cached_association_ids.compact!
+          
+          # Possible GOTCHA: Hash#values does not preserve order. Hence, the associated objects
+          # returned by the next line might be in a different order than their respective
+          # ids in cached_association_ids
+          
+          if (cached_association_ids && cached_association_ids.size > 0)
+            assoc_objs = reflection.klass.get_caches(cached_association_ids)
+            association = assoc_objs.is_a?(Hash) ? assoc_objs.values : assoc_objs
+            association = Array(association).flatten.compact
+          else
+            association = []
+          end
+          
+          instance_variable_set("@cached_#{reflection.name}", association)
+        end
+        
+        association
       end
       
       add_has_many_klass_callbacks!(reflection, ids_reflection)

@@ -66,5 +66,15 @@ context "A Ruby class acting as cached with a has_many_cached :through associati
     @user.get_cache("cat_ids").should.equal([2])
   end
   
-
+  specify "should not consult memcached on every invocation" do
+    HasManyCachedThroughSpecSetup::Cat.expects(:get_caches).once.with([1, 2]).returns(@cats)
+    @user.cached_cats.should.equal(@cats)
+    4.times {@user.cached_cats.should.equal(@cats)}
+  end
+  
+  specify "can be forced to reload already cached cats from memcache" do
+    HasManyCachedThroughSpecSetup::Cat.expects(:get_caches).times(5).with([1, 2]).returns(@cats)
+    @user.cached_cats.should.equal(@cats)
+    4.times {@user.cached_cats(true).should.equal(@cats)}
+  end
 end
