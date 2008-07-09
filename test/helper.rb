@@ -76,6 +76,31 @@ end
 
 $cache = HashStore.new
 
+module MockActiveRecord
+  class Base
+    def initialize(attributes = {})
+      attributes.each { |key, value| instance_variable_set("@#{key}", value) }
+    end
+
+    def self.reflections
+      @reflections ||= {}
+      @reflections
+    end
+
+    class << self
+      def name_with_normalization
+        # "MockActiveRecord::Cat" => "Cat"
+        name_without_normalization.split('::').last.capitalize
+      end
+      alias_method_chain :name, :normalization
+    end
+    
+    def reload
+      # Do nothing
+    end
+  end
+end
+
 class Story
   acts_as_cached($with_memcache ? {} : { :store => $cache })
 

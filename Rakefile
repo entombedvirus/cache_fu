@@ -15,6 +15,13 @@ task :test do
   end
 end
 
+desc 'Test the cached associations functionality of the cache_fu plugin.'
+task :test_assoc_caching do
+  Dir["test/*cached*test.rb"].each do |file|
+    ruby "#{file}"
+  end
+end
+
 desc 'Test the cache_fu plugin against Rails 1.2.5'
 task :test_with_125 do
   ENV['MULTIRAILS_RAILS_VERSION'] = '1.2.5'

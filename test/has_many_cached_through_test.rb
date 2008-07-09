@@ -1,4 +1,3 @@
-require File.join(File.dirname(__FILE__), 'helper')
 require File.join(File.dirname(__FILE__), 'has_many_cached_through_helper')
  
 context "A Ruby class acting as cached with a has_many_cached :through association" do
@@ -91,4 +90,11 @@ context "A Ruby class acting as cached with a has_many_cached :through associati
     @user.cat_ids.should.equal([1, 2])
   end
   
+  specify "should clear its instance association cache when reloaded" do
+    HasManyCachedThroughSpecSetup::Cat.expects(:get_caches).times(2).with([1, 2]).returns(@cats)
+    
+    @user.cached_cats.should.equal(@cats)
+    @user.reload
+    @user.cached_cats.should.equal(@cats)
+  end
 end

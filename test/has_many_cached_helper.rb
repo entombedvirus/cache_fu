@@ -1,13 +1,8 @@
+require File.join(File.dirname(__FILE__), 'helper')
+
 module HasManyCachedSpecSetup
-  class User
-    def self.name
-      "User"
-    end
-    
-    def self.reflections
-      @reflections ||= {}
-      @reflections
-    end
+  class User < MockActiveRecord::Base
+    attr_accessor :id, :name
     
     def self.has_many(association_id, options = {}, &extension)
       reflection = Object.new
@@ -20,19 +15,9 @@ module HasManyCachedSpecSetup
       
       reflections[association_id] = reflection
     end
-    
-    attr_accessor :id, :name
-
-    def initialize(attributes = {})
-      attributes.each { |key, value| instance_variable_set("@#{key}", value) }
-    end
   end
   
-  class Cat
-    def self.name
-      "Cat"
-    end
-    
+  class Cat < MockActiveRecord::Base
     %w(before_save after_destroy).each do |callback|
       eval <<-"end_eval"
         def self.#{callback}(&block)
@@ -45,10 +30,6 @@ module HasManyCachedSpecSetup
     
     attr_accessor :id, :name, :user_id
 
-    def initialize(attributes = {})
-      attributes.each { |key, value| instance_variable_set("@#{key}", value) }
-    end
-    
     def save
       self.class.before_save.each {|cb| cb.call(self) }
     end
@@ -56,6 +37,11 @@ module HasManyCachedSpecSetup
     def destroy
       self.class.after_destroy.each {|cb| cb.call(self) }
     end
+  end
+  
+  [User, Cat].each do |klass|
+    klass.extend ActsAsCached::CacheAssociations::ClassMethods
+    klass.send :include, ActsAsCached::MarshallingMethods
   end
   
   def self.included(base)

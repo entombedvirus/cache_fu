@@ -1,4 +1,3 @@
-require File.join(File.dirname(__FILE__), 'helper')
 require File.join(File.dirname(__FILE__), 'belongs_to_cached_helper')
 
 context "A Cat class belongs_to_cached :user" do
@@ -19,5 +18,13 @@ context "A Cat class belongs_to_cached :user" do
     BelongsToCachedSpecSetup::User.expects(:get_cache).times(5).with(1).returns(@user)
     @cat.cached_user.should.equal(@user)
     4.times {@cat.cached_user(true).should.equal(@user)}
+  end
+  
+  specify "should clear its instance association cache when reloaded" do
+    BelongsToCachedSpecSetup::User.expects(:get_cache).times(2).with(1).returns(@user)
+    
+    @cat.cached_user.should.equal(@user)
+    @cat.reload
+    @cat.cached_user.should.equal(@user)
   end
 end

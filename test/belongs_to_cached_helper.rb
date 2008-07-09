@@ -1,31 +1,12 @@
-module BelongsToCachedSpecSetup
-  class User
-    def self.name
-      "User"
-    end
-    
-    def self.reflections
-      @reflections ||= {}
-      @reflections
-    end
-        
-    attr_accessor :id, :name
+require File.join(File.dirname(__FILE__), 'helper')
 
-    def initialize(attributes = {})
-      attributes.each { |key, value| instance_variable_set("@#{key}", value) }
-    end
-    
+module BelongsToCachedSpecSetup
+  class User < MockActiveRecord::Base
+    attr_accessor :id, :name
   end
   
-  class Cat
-    def self.name
-      "Cat"
-    end
-    
-    def self.reflections
-      @reflections ||= {}
-      @reflections
-    end
+  class Cat < MockActiveRecord::Base
+    attr_accessor :id, :name, :user_id
     
     def self.belongs_to(association_id, options = {}, &extension)
       reflection = Object.new
@@ -38,12 +19,11 @@ module BelongsToCachedSpecSetup
       
       reflections[association_id] = reflection
     end    
-    
-    attr_accessor :id, :name, :user_id
-
-    def initialize(attributes = {})
-      attributes.each { |key, value| instance_variable_set("@#{key}", value) }
-    end
+  end
+  
+  [User, Cat].each do |klass|
+    klass.extend ActsAsCached::CacheAssociations::ClassMethods
+    klass.send :include, ActsAsCached::MarshallingMethods
   end
   
   def self.included(base)

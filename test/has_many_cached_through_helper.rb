@@ -1,13 +1,8 @@
+require File.join(File.dirname(__FILE__), 'helper')
+
 module HasManyCachedThroughSpecSetup
-  class User
-    def self.name
-      "User"
-    end
-    
-    def self.reflections
-      @reflections ||= {}
-      @reflections
-    end
+  class User < MockActiveRecord::Base
+    attr_accessor :id, :name
     
     def self.has_many(association_id, options = {}, &extension)
       reflection = Object.new
@@ -44,30 +39,17 @@ module HasManyCachedThroughSpecSetup
         proxy
       end
     end
-    
-    attr_accessor :id, :name
-
-    def initialize(attributes = {})
-      attributes.each { |key, value| instance_variable_set("@#{key}", value) }
-    end
   end
   
-  class Ownership
-    def self.reflections
-      @reflections ||= {}
-      @reflections
-    end
+  class Ownership < MockActiveRecord::Base
+    attr_accessor :id, :user_id, :cat_id
     
     def self.belongs_to(association_id, options = {})
       reflection = Object.new
       
       reflections[association_id] = reflection
     end
-    
-    def self.name
-      "Ownership"
-    end
-    
+
     %w(before_save after_destroy).each do |callback|
       eval <<-"end_eval"
         def self.#{callback}(&block)
@@ -84,27 +66,18 @@ module HasManyCachedThroughSpecSetup
     
     def destroy
       self.class.after_destroy.first.call(self)
-    end
-    
-    attr_accessor :id, :user_id, :cat_id
-
-    def initialize(attributes = {})
-      attributes.each { |key, value| instance_variable_set("@#{key}", value) }
     end    
   end
   
-  class Cat
-    def self.name
-      "Cat"
-    end
-    
+  class Cat < MockActiveRecord::Base
     attr_accessor :id, :name
-
-    def initialize(attributes = {})
-      attributes.each { |key, value| instance_variable_set("@#{key}", value) }
-    end    
   end
-  
+
+  [User, Cat, Ownership].each do |klass|
+    klass.extend ActsAsCached::CacheAssociations::ClassMethods
+    klass.send :include, ActsAsCached::MarshallingMethods
+  end
+    
   def self.included(base)
     base.setup do 
       Ownership.before_save.clear

@@ -1,4 +1,3 @@
-require File.join(File.dirname(__FILE__), 'helper')
 require File.join(File.dirname(__FILE__), 'has_many_cached_helper')
 
 context "A User class acting as cached with has_many_cached :cats" do
@@ -105,4 +104,13 @@ context "A User class acting as cached with has_many_cached :cats" do
     # We're just changing the cache, the association in db should still point to the old cats
     @user.cat_ids.should.equal([1, 2])
   end
+  
+  specify "should clear its instance association cache when reloaded" do
+    HasManyCachedSpecSetup::Cat.expects(:get_caches).times(2).with([1, 2]).returns(@cats)
+    
+    @user.cached_cats.should.equal(@cats)
+    @user.reload
+    @user.cached_cats.should.equal(@cats)
+  end
+  
 end

@@ -1,13 +1,8 @@
+require File.join(File.dirname(__FILE__), 'helper')
+
 module HasOneCachedSpecSetup
-  class User
-    def self.name
-      "User"
-    end
-    
-    def self.reflections
-      @reflections ||= {}
-      @reflections
-    end
+  class User < MockActiveRecord::Base
+    attr_accessor :id, :name
     
     def self.has_one(association_id, options = {}, &extension)
       reflection = Object.new
@@ -23,19 +18,10 @@ module HasOneCachedSpecSetup
       define_method(association_id) do
       end
     end
-    
-    attr_accessor :id, :name
-
-    def initialize(attributes = {})
-      attributes.each { |key, value| instance_variable_set("@#{key}", value) }
-    end
-    
   end
   
-  class Cat
-    def self.name
-      "Cat"
-    end
+  class Cat < MockActiveRecord::Base
+    attr_accessor :id, :name, :user_id
     
     def save
       self.class.before_save.each {|cb| cb.call(self)}
@@ -54,12 +40,11 @@ module HasOneCachedSpecSetup
         end
       end_eval
     end
-    
-    attr_accessor :id, :name, :user_id
+  end
 
-    def initialize(attributes = {})
-      attributes.each { |key, value| instance_variable_set("@#{key}", value) }
-    end
+  [User, Cat].each do |klass|
+    klass.extend ActsAsCached::CacheAssociations::ClassMethods
+    klass.send :include, ActsAsCached::MarshallingMethods
   end
   
   def self.included(base)
