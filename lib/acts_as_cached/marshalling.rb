@@ -2,7 +2,7 @@ module ActsAsCached
   module MarshallingMethods
     def self.included(base)
       if base.ancestors.select { |constant| constant.is_a? Class }.include?(::ActiveRecord::Base)
-        base.class_eval <<-EOM
+        base.class_eval <<-"EOM"
           def marshal_dump
             self.attributes
           end
