@@ -1,14 +1,13 @@
 module ActsAsCached
   module MarshallingMethods
     def self.included(base)
-      puts "HAI"
-      if base.is_a?(::ActiveRecord::Base)
+      if base.ancestors.select { |constant| constant.is_a? Class }.include?(::ActiveRecord::Base)
         base.class_eval <<-EOM
           def marshal_dump
             self.attributes
           end
         
-          def marshal_load(raw)
+          def marshal_load(attributes)
             self.instance_variable_set("@attributes", attributes)
             self.instance_variable_set("@attributes_cache", Hash.new)
 
