@@ -15,6 +15,10 @@ context "A Cat class belongs_to_cached :user" do
     @cat = Cat.new(:name => "Chester", :user_id => 1)
     Cat.stubs(:find).returns(@cat)
     User.stubs(:find).returns(@user)
+    
+    $cache.clear
+    User.delete_all
+    Cat.delete_all
   end
   
   specify "should load the owner from cache" do

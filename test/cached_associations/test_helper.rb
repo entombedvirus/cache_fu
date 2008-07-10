@@ -49,6 +49,7 @@ end
 $cache = HashStore.new
 
 Object.const_set(:RAILS_DEFAULT_LOGGER, Logger.new(STDOUT))
+# ActiveRecord::Base.logger = RAILS_DEFAULT_LOGGER
 
 ActiveRecord::Base.establish_connection :adapter => 'sqlite3', :dbfile => File.join(dir, 'db/master.db')
 
