@@ -12,7 +12,7 @@ module ActsAsCached
             @cached_associations ||= {}
           end
           
-          def reload
+          def clear_association_cache
             self.cached_associations.clear
             super
           end

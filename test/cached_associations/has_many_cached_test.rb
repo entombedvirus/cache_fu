@@ -113,4 +113,14 @@ context "A User class acting as cached with has_many_cached :cats" do
     @user.cached_cats.should.equal(@cats)
   end
   
+  # specify "should update the cached cats list when a cat is added thru the association proxy" do
+  #   @user.cached_cats.should.equal @cats
+  #   @user.class.fetch_cache("1:cat_ids").should.equal [1, 2]
+  #   
+  #   new_cat = HasManyCachedSpecSetup::Cat.new(:id => 3, :name => "John")
+  #   @user.cats << new_cat
+  #   
+  #   @user.cached_cats.should.equal(@cats + [new_cat])
+  # end
+  # specify "should update the cached cats list when a cat is removed thru the association proxy"
 end

@@ -14,6 +14,14 @@ module HasManyCachedSpecSetup
       reflection.stubs(:active_record).returns(User)
       
       reflections[association_id] = reflection
+      
+      # proxy = Object.new
+      # proxy.define_method(:<<) do |obj|
+      #   options[:after_add].call(obj) if options[:after_add]
+      # end
+      # define_method(reflection.name) do
+      #   proxy
+      # end
     end
   end
   

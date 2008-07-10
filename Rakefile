@@ -6,7 +6,7 @@ require 'load_multi_rails_rake_tasks'
 desc "Run all the tests"
 task :default => :test
 
-test_files = FileList['test/*test.rb']
+test_files = FileList['test/**/*test.rb']
 
 desc 'Test the cache_fu plugin.'
 task :test do
