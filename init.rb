@@ -12,11 +12,6 @@ require 'acts_as_cached'
 
 Object.send :include, ActsAsCached::Mixin
 
-::ActiveRecord::Base.class_eval do
-  extend CacheAssociations::ClassMethods
-  include ActsAsCached::MarshallingMethods
-end
-
 unless File.exists? config_file = File.join(RAILS_ROOT, 'config', 'memcached.yml')
   error = "No config file found.  Make sure you used `script/plugin install' and have memcached.yml in your config directory."
   puts error

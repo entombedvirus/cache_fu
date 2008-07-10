@@ -1,5 +1,10 @@
 module ActsAsCached
   module CacheAssociations
+    def self.included(base)
+      if base.ancestors.select {|constant| constant.is_a?(Class)}.include?(::ActiveRecord::Base)
+        base.extend ClassMethods
+      end
+    end
     module ClassMethods
       def self.extended(base)
         base.class_eval <<-END_EVAL
