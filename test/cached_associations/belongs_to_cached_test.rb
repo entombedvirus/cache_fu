@@ -1,8 +1,6 @@
-require File.join(File.dirname(__FILE__), 'belongs_to_cached_helper')
+require File.join(File.dirname(__FILE__), 'test_helper')
 
 context "A Cat class belongs_to_cached :user" do
-  include BelongsToCachedSpecSetup
-  
   setup do
     User.class_eval <<-END_EVAL
       acts_as_cached :store => $cache
