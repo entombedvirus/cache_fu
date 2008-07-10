@@ -17,7 +17,7 @@ end
 
 desc 'Test the cached associations functionality of the cache_fu plugin.'
 task :test_assoc_caching do
-  Dir["test/*cached*test.rb"].each do |file|
+  Dir["test/cached_associations/*test.rb"].each do |file|
     ruby "#{file}"
   end
 end

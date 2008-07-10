@@ -27,6 +27,72 @@ end
 Test::Spec::Should.send    :alias_method, :have, :be
 Test::Spec::ShouldNot.send :alias_method, :have, :be
 
+# Lazy update patch
+module ActiveRecord
+  module Changed
+    def self.included(base)
+      base.alias_method_chain :write_attribute, :changed
+      base.alias_method_chain :update_without_timestamps, :changed
+      base.alias_method_chain :save_with_validation, :changed
+      base.alias_method_chain :save_with_validation!, :changed
+      base.alias_method_chain :create, :changed
+    end
+    
+    def changes
+      @changes ||= {}.with_indifferent_access
+    end
+
+    private
+
+    def write_attribute_with_changed(attr_name, value)
+      # If you're accessing attr= method, you should change the value ;-)
+      changes[attr_name] = [read_attribute(attr_name.to_s), value]
+      changed_attributes << attr_name.to_s
+      write_attribute_without_changed(attr_name, value)
+    end
+    
+    def update_without_timestamps_with_changed      
+      quoted_attributes = attributes_with_quotes(false, false)
+      quoted_attributes.reject! { |key, value| !changed_attributes.include?(key.to_s)}
+      return 0 if quoted_attributes.empty?
+      connection.update(
+                    "UPDATE #{self.class.quoted_table_name} " +
+                    "SET #{quoted_comma_pair_list(connection, quoted_attributes)} " +
+                    "WHERE #{connection.quote_column_name(self.class.primary_key)} " +
+                    "= #{quote_value(id)}",
+                    "#{self.class.name} Update"
+      )
+    ensure
+      changed_attributes.clear
+    end
+    
+    def changed_attributes
+      @changed_attributes ||= Set.new
+    end
+
+    def create_with_changed
+      create_without_changed
+    ensure
+      changed_attributes.clear
+    end
+    
+    def save_with_validation_with_changed
+      save_with_validation_without_changed 
+    ensure 
+      changed_attributes.clear
+    end
+
+    def save_with_validation_with_changed!
+      save_with_validation_without_changed! 
+    ensure 
+      changed_attributes.clear
+    end
+
+  end
+end
+
+ActiveRecord::Base.send :include, ActiveRecord::Changed
+
 require 'acts_as_cached'
 Object.send :include, ActsAsCached::Mixin
 

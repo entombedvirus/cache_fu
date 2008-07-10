@@ -144,7 +144,7 @@ module ActsAsCached
         pkey_name = reflection.primary_key_name
         skey_name = :id
 
-        reflection.klass.before_save do |instance|
+        reflection.klass.after_save do |instance|
           if instance.changes[pkey_name]
             # Need to add id to parent's cache list ONLY if parent had the id list in cache in the first place
             key = "#{instance.send(pkey_name)}:#{ids_reflection}"
@@ -169,11 +169,12 @@ module ActsAsCached
       end
 
       def add_has_many_klass_callbacks!(reflection, ids_reflection)
+        # debugger if reflection.options[:through]
         pkey_name = reflection.options[:through] ? reflection.through_reflection.primary_key_name : reflection.primary_key_name
-        skey_name = reflection.options[:through] ? reflection.source_reflection.primary_key_name : :id
+        skey_name = (reflection.options[:through] && reflection.source_reflection) ? reflection.source_reflection.primary_key_name : :id
         r = reflection.options[:through] ? reflection.through_reflection : reflection
 
-        r.klass.before_save do |instance|
+        r.klass.after_save do |instance|
           # if the foreign_key on self was changed
           if instance.changes[pkey_name]
 
