@@ -1,10 +1,38 @@
-require File.join(File.dirname(__FILE__), 'has_many_cached_helper')
+require File.join(File.dirname(__FILE__), 'test_helper')
 
 context "A User class acting as cached with has_many_cached :cats" do
-  include HasManyCachedSpecSetup
+  
+  setup do
+    User.class_eval <<-END_EVAL
+      acts_as_cached :store => $cache
+      has_many_cached :cats
+    END_EVAL
+    
+    Cat.class_eval <<-END_EVAL
+      acts_as_cached :store => $cache
+    END_EVAL
+    
+    @user  = User.new(:name => "Bob")
+    @user.id = 1
+    @user.stubs(:cat_ids).returns([1, 2])
+    
+    @siqi = User.new(:name => "Siqi")
+    @siqi.id = 2
+    
+    @cats = [Cat.new(:name => "Chester", :user_id => 1), Cat.new(:name => "Chester", :user_id => 1)]
+    @cats[0].id = 1
+    @cats[1].id = 2
+    
+    Cat.stubs(:find).with(%w(1 2)).returns(@cats)
+    User.stubs(:find).returns(@user)
+    
+    $cache.clear
+    User.delete_all
+    Cat.delete_all
+  end
   
   specify "should be able to retrieve cats from cache" do
-    HasManyCachedSpecSetup::Cat.expects(:get_caches).with([1, 2]).returns(@cats)
+    Cat.expects(:get_caches).with([1, 2]).returns(@cats)
     @user.cached_cats.should.equal @cats
     @user.should.have.cached "cat_ids"
   end
@@ -31,7 +59,8 @@ context "A User class acting as cached with has_many_cached :cats" do
     @user.cached_cats.should.equal(@cats)
     @user.get_cache("cat_ids").should.equal([1, 2])
     
-    new_cat = HasManyCachedSpecSetup::Cat.new(:id => 3, :name => "Whiskers", :user_id => 1)
+    new_cat = Cat.new(:name => "Whiskers", :user_id => 1)
+    new_cat.id = 3
     new_cat.stubs(:changes).returns({"user_id" => [nil, 1]})
     new_cat.save
     
@@ -49,7 +78,8 @@ context "A User class acting as cached with has_many_cached :cats" do
     @siqi.should.not.have.cached "cat_ids"
     
     @siqi.expects(:cat_ids).never
-    new_cat = HasManyCachedSpecSetup::Cat.new(:id => 3, :name => "Man Eating Cat", :user_id => 2)
+    new_cat = Cat.new(:name => "Man Eating Cat", :user_id => 2)
+    new_cat.id = 3
     new_cat.stubs(:changes).returns({"user_id" => [nil, 1]})
     new_cat.save
     
@@ -60,7 +90,8 @@ context "A User class acting as cached with has_many_cached :cats" do
     @siqi.should.not.have.cached "cat_ids"
     
     @siqi.expects(:cat_ids).never
-    new_cat = HasManyCachedSpecSetup::Cat.new(:id => 3, :name => "Man Eating Cat", :user_id => 2)
+    new_cat = Cat.new(:name => "Man Eating Cat", :user_id => 2)
+    new_cat.id = 3
     new_cat.destroy
     
     @siqi.should.not.have.cached "cat_ids"
@@ -81,13 +112,13 @@ context "A User class acting as cached with has_many_cached :cats" do
   end
   
   specify "should not consult memcached on every invocation" do
-    HasManyCachedSpecSetup::Cat.expects(:get_caches).once.with([1, 2]).returns(@cats)
+    Cat.expects(:get_caches).once.with([1, 2]).returns(@cats)
     @user.cached_cats.should.equal(@cats)
     4.times {@user.cached_cats.should.equal(@cats)}
   end
   
   specify "can be forced to reload already cached cats from memcache" do
-    HasManyCachedSpecSetup::Cat.expects(:get_caches).times(5).with([1, 2]).returns(@cats)
+    Cat.expects(:get_caches).times(5).with([1, 2]).returns(@cats)
     @user.cached_cats.should.equal(@cats)
     4.times {@user.cached_cats(true).should.equal(@cats)}
   end
@@ -96,8 +127,9 @@ context "A User class acting as cached with has_many_cached :cats" do
     @user.cached_cats.should.equal(@cats)
     @user.cached_cat_ids.should.equal([1, 2])
     
-    @other_cat = HasManyCachedSpecSetup::Cat.new(:id => 3, :name => "Man Eating Cat", :user_id => 1)
-    HasManyCachedSpecSetup::Cat.expects(:find).with(%w(3)).returns(@other_cat)
+    @other_cat = Cat.new(:name => "Man Eating Cat", :user_id => 1)
+    @other_cat.id = 3
+    Cat.expects(:find).with(%w(3)).returns(@other_cat)
     @user.cached_cat_ids = [3]
     
     @user.cached_cats.should.equal([@other_cat])
@@ -106,7 +138,7 @@ context "A User class acting as cached with has_many_cached :cats" do
   end
   
   specify "should clear its instance association cache when reloaded" do
-    HasManyCachedSpecSetup::Cat.expects(:get_caches).times(2).with([1, 2]).returns(@cats)
+    Cat.expects(:get_caches).times(2).with([1, 2]).returns(@cats)
     
     @user.cached_cats.should.equal(@cats)
     @user.reload
@@ -117,7 +149,7 @@ context "A User class acting as cached with has_many_cached :cats" do
   #   @user.cached_cats.should.equal @cats
   #   @user.class.fetch_cache("1:cat_ids").should.equal [1, 2]
   #   
-  #   new_cat = HasManyCachedSpecSetup::Cat.new(:id => 3, :name => "John")
+  #   new_cat = Cat.new(:id => 3, :name => "John")
   #   @user.cats << new_cat
   #   
   #   @user.cached_cats.should.equal(@cats + [new_cat])
