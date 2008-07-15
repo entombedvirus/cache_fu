@@ -3,6 +3,10 @@ require File.join(File.dirname(__FILE__), 'test_helper')
 context "A User class acting as cached with has_many_cached :cats" do
   
   setup do
+    $cache.clear
+    User.delete_all
+    Cat.delete_all
+    
     User.class_eval <<-END_EVAL
       acts_as_cached :store => $cache
       has_many_cached :cats
@@ -13,22 +17,15 @@ context "A User class acting as cached with has_many_cached :cats" do
     END_EVAL
     
     @user  = User.new(:name => "Bob")
-    @user.id = 1
-    @user.stubs(:cat_ids).returns([1, 2])
+    @user.id = 1; @user.save
+    
     
     @siqi = User.new(:name => "Siqi")
-    @siqi.id = 2
+    @siqi.id = 2; @user.save
     
     @cats = [Cat.new(:name => "Chester", :user_id => 1), Cat.new(:name => "Chester", :user_id => 1)]
-    @cats[0].id = 1
-    @cats[1].id = 2
-    
-    Cat.stubs(:find).with(%w(1 2)).returns(@cats)
-    User.stubs(:find).returns(@user)
-    
-    $cache.clear
-    User.delete_all
-    Cat.delete_all
+    @cats[0].id = 1; @cats[0].save
+    @cats[1].id = 2; @cats[1].save
   end
   
   specify "should be able to retrieve cats from cache" do
@@ -61,7 +58,6 @@ context "A User class acting as cached with has_many_cached :cats" do
     
     new_cat = Cat.new(:name => "Whiskers", :user_id => 1)
     new_cat.id = 3
-    new_cat.stubs(:changes).returns({"user_id" => [nil, 1]})
     new_cat.save
     
     @user.get_cache("cat_ids").should.equal([1, 2, 3])
@@ -78,10 +74,7 @@ context "A User class acting as cached with has_many_cached :cats" do
     @siqi.should.not.have.cached "cat_ids"
     
     @siqi.expects(:cat_ids).never
-    new_cat = Cat.new(:name => "Man Eating Cat", :user_id => 2)
-    new_cat.id = 3
-    new_cat.stubs(:changes).returns({"user_id" => [nil, 1]})
-    new_cat.save
+    new_cat = Cat.create(:name => "Man Eating Cat", :user_id => 2)
     
     @siqi.should.not.have.cached "cat_ids"
   end
@@ -90,8 +83,7 @@ context "A User class acting as cached with has_many_cached :cats" do
     @siqi.should.not.have.cached "cat_ids"
     
     @siqi.expects(:cat_ids).never
-    new_cat = Cat.new(:name => "Man Eating Cat", :user_id => 2)
-    new_cat.id = 3
+    new_cat = Cat.create(:name => "Man Eating Cat", :user_id => 2)
     new_cat.destroy
     
     @siqi.should.not.have.cached "cat_ids"
@@ -99,12 +91,10 @@ context "A User class acting as cached with has_many_cached :cats" do
 
   specify "should update the old user's cached cat ids list when a cat is given to another user" do
     @user.cached_cat_ids.should.equal([1, 2])
-    @siqi.stubs(:cat_ids).returns([])
     @siqi.cached_cat_ids.should.equal([])
     
     bobs_cat = @cats.first
     bobs_cat.user_id = @siqi.id
-    bobs_cat.stubs(:changes).returns("user_id" => [1, 2])
     bobs_cat.save
     
     @user.cached_cat_ids.should.equal([2])
@@ -127,11 +117,10 @@ context "A User class acting as cached with has_many_cached :cats" do
     @user.cached_cats.should.equal(@cats)
     @user.cached_cat_ids.should.equal([1, 2])
     
-    @other_cat = Cat.new(:name => "Man Eating Cat", :user_id => 1)
+    @other_cat = Cat.new(:name => "Man Eating Cat", :user_id => nil)
     @other_cat.id = 3
-    Cat.expects(:find).with(%w(3)).returns(@other_cat)
+    @other_cat.save
     @user.cached_cat_ids = [3]
-    
     @user.cached_cats.should.equal([@other_cat])
     # We're just changing the cache, the association in db should still point to the old cats
     @user.cat_ids.should.equal([1, 2])
@@ -145,14 +134,22 @@ context "A User class acting as cached with has_many_cached :cats" do
     @user.cached_cats.should.equal(@cats)
   end
   
+  specify "should not allow :order and :limit as options" do
+    class Owner < ActiveRecord::Base
+      acts_as_cached :store => $cache
+    end
+    
+    proc { Owner.has_many_cached :things, :order => "id DESC" }.should.raise(RuntimeError)
+    proc { Owner.has_many_cached :things, :limit => 15 }.should.raise(RuntimeError)
+  end
   # specify "should update the cached cats list when a cat is added thru the association proxy" do
   #   @user.cached_cats.should.equal @cats
-  #   @user.class.fetch_cache("1:cat_ids").should.equal [1, 2]
+  #   @user.class.fetch_cache("1:cat_ids").should.equal([1, 2])
   #   
-  #   new_cat = Cat.new(:id => 3, :name => "John")
+  #   new_cat = Cat.new(:name => "John")
   #   @user.cats << new_cat
   #   
-  #   @user.cached_cats.should.equal(@cats + [new_cat])
+  #   @user.cached_cats(true).should.equal(@cats + [new_cat])
   # end
   # specify "should update the cached cats list when a cat is removed thru the association proxy"
 end

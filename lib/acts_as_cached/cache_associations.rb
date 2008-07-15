@@ -80,6 +80,8 @@ module ActsAsCached
       end
 
       def has_many_cached(association_id, options = {})
+        raise ":order and :limit are not allowed as valid options for a has_many_cached association." if options[:order] || options[:limit]
+        
         self.has_many(association_id, options)
         reflection = self.reflections[association_id]
         singular_reflection = reflection.name.to_s.downcase.singularize
