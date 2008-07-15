@@ -142,14 +142,23 @@ context "A User class acting as cached with has_many_cached :cats" do
     proc { Owner.has_many_cached :things, :order => "id DESC" }.should.raise(RuntimeError)
     proc { Owner.has_many_cached :things, :limit => 15 }.should.raise(RuntimeError)
   end
-  # specify "should update the cached cats list when a cat is added thru the association proxy" do
-  #   @user.cached_cats.should.equal @cats
-  #   @user.class.fetch_cache("1:cat_ids").should.equal([1, 2])
-  #   
-  #   new_cat = Cat.new(:name => "John")
-  #   @user.cats << new_cat
-  #   
-  #   @user.cached_cats(true).should.equal(@cats + [new_cat])
-  # end
-  # specify "should update the cached cats list when a cat is removed thru the association proxy"
+
+  specify "should update the cached cats list when a cat is added thru the association proxy" do
+    @user.cached_cats.should.equal @cats
+    @user.class.fetch_cache("1:cat_ids").should.equal([1, 2])
+    
+    new_cat = Cat.new(:name => "John")
+    new_cat.id = 3
+    @user.cats << new_cat
+    
+    @user.cached_cats.should.equal(@cats + [new_cat])
+  end
+  
+  specify "should update the cached cats list when a cat is removed thru the association proxy" do
+    @user.cached_cats.should.equal @cats
+    @user.class.fetch_cache("1:cat_ids").should.equal([1, 2])
+    
+    @user.cached_cats.delete(@cats.first)
+    @user.cached_cats.should.equal([@cats[1]])
+  end
 end

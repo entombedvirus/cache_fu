@@ -82,6 +82,8 @@ module ActsAsCached
       def has_many_cached(association_id, options = {})
         raise ":order and :limit are not allowed as valid options for a has_many_cached association." if options[:order] || options[:limit]
         
+        add_has_many_association_callbacks!(options)
+        
         self.has_many(association_id, options)
         reflection = self.reflections[association_id]
         singular_reflection = reflection.name.to_s.downcase.singularize
@@ -205,6 +207,22 @@ module ActsAsCached
           end
         end
       end
+      
+      def add_has_many_association_callbacks!(options)
+        options[:after_add] ||= []
+        options[:after_add] = Array(options[:after_add])
+        options[:after_add] << proc { |owner, associate|
+          owner.cached_associations.clear
+        }
+        
+        options[:after_remove] ||= []
+        options[:after_remove] = Array(options[:after_remove])
+        options[:after_remove] << proc { |owner, associate|
+          owner.cached_associations.clear
+        }
+      end
     end
+    
+    
   end
 end
