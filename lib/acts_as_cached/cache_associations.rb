@@ -114,29 +114,33 @@ module ActsAsCached
 
         define_method("cached_#{reflection.name}") do |*params|
           reload_from_cache = params.first
-          # association = instance_variable_get("@cached_#{reflection.name}")
-          association = self.cached_associations[reflection.name]
+          
+          # Try the instance cache first
+          associates = self.cached_associations[reflection.name]
+          associate_ids = nil
+          
+          # If that is a miss, try the cache store next
+          if associates.blank? || reload_from_cache
+            associate_ids = self.class.cache_store(:get, "#{self.cache_key}:#{ids_reflection}")
+            associates = reflection.klass.get_caches(associate_ids).values if associate_ids
+          end
+          
+          # And finally we consult the database if all else fails
+          if associates.blank?
+            associates = send(reflection.name, *params).to_a
+            associate_ids = associates.map(&:id)
 
-          if association.nil? || reload_from_cache
-            cached_association_ids = send("cached_#{ids_reflection}", *params)
-            cached_association_ids.compact!
-
-            # Possible GOTCHA: Hash#values does not preserve order. Hence, the associated objects
-            # returned by the next line might be in a different order than their respective
-            # ids in cached_association_ids
-
-            if (cached_association_ids && cached_association_ids.any?)
-              assoc_objs = reflection.klass.get_caches(cached_association_ids)
-              association = assoc_objs.is_a?(Hash) ? assoc_objs.values : assoc_objs
-              association = Array(association).flatten.compact
+            unless associates.blank?
+              associates.each {|obj| obj.set_cache}
             else
-              association = []
+              associates = []
             end
 
-            self.cached_associations[reflection.name] = association if association
+            self.cached_associations[reflection.name] = associates if associates
+            self.class.cache_store(:set, "#{self.cache_key}:#{ids_reflection}", associate_ids) if associate_ids
           end
 
-          association
+          associates
         end
 
         add_has_many_klass_callbacks!(reflection, ids_reflection)

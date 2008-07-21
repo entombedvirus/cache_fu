@@ -42,7 +42,6 @@ context "A Ruby class acting as cached with a has_many_cached :through associati
   end
   
   specify "should be able to retrieve associations from cache" do
-    Cat.expects(:get_caches).with([1, 2]).returns(@cats)
     @user.cached_cats.should.equal @cats
     @user.should.have.cached "cat_ids"
   end
@@ -60,7 +59,7 @@ context "A Ruby class acting as cached with a has_many_cached :through associati
   end
 
   specify "should cache an empty array if the association is empty" do
-    @user.stubs(:cat_ids).returns([])    
+    @user.cats.clear
     @user.cached_cats.should.equal([])
     @user.get_cache("cat_ids").should.equal([])
   end
@@ -96,14 +95,16 @@ context "A Ruby class acting as cached with a has_many_cached :through associati
   end
   
   specify "should not consult memcached on every invocation" do
-    Cat.expects(:get_caches).once.with([1, 2]).returns(@cats)
     @user.cached_cats.should.equal(@cats)
+    
+    Cat.expects(:get_caches).never 
     4.times {@user.cached_cats.should.equal(@cats)}
   end
   
   specify "can be forced to reload already cached cats from memcache" do
-    Cat.expects(:get_caches).times(5).with([1, 2]).returns(@cats)
     @user.cached_cats.should.equal(@cats)
+    
+    Cat.expects(:get_caches).times(4).with([1, 2]).returns({1 => @cats[0], 2 => @cats[1]})
     4.times {@user.cached_cats(true).should.equal(@cats)}
   end
   
@@ -122,10 +123,10 @@ context "A Ruby class acting as cached with a has_many_cached :through associati
   end
   
   specify "should clear its instance association cache when reloaded" do
-    Cat.expects(:get_caches).times(2).with([1, 2]).returns(@cats)
-    
     @user.cached_cats.should.equal(@cats)
     @user.reload
+    
+    Cat.expects(:get_caches).with([1, 2]).returns({1 => @cats[0], 2 => @cats[1]})
     @user.cached_cats.should.equal(@cats)
   end
 end

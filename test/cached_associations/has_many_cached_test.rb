@@ -29,9 +29,8 @@ context "A User class acting as cached with has_many_cached :cats" do
   end
   
   specify "should be able to retrieve cats from cache" do
-    Cat.expects(:get_caches).with([1, 2]).returns(@cats)
-    @user.cached_cats.should.equal @cats
-    @user.should.have.cached "cat_ids"
+    @user.cached_cats.should.equal(@cats)
+    @user.should.have.cached("cat_ids")
   end
   
   specify "should be able to set cats to cache if not already set when getting" do
@@ -47,14 +46,14 @@ context "A User class acting as cached with has_many_cached :cats" do
   end
   
   specify "should cache an empty array if the user does not have any cats" do
-    @user.stubs(:cat_ids).returns([])    
+    @user.cats.delete_all
     @user.cached_cats.should.equal([])
-    @user.get_cache("cat_ids").should.equal([])
+    @user.class.fetch_cache("1:cat_ids").should.equal([])
   end
     
   specify "should update the cached cat ids list when a Cat instance is saved" do
     @user.cached_cats.should.equal(@cats)
-    @user.get_cache("cat_ids").should.equal([1, 2])
+    User.fetch_cache("1:cat_ids").should.equal([1, 2])
     
     new_cat = Cat.new(:name => "Whiskers", :user_id => 1)
     new_cat.id = 3
@@ -102,14 +101,15 @@ context "A User class acting as cached with has_many_cached :cats" do
   end
   
   specify "should not consult memcached on every invocation" do
-    Cat.expects(:get_caches).once.with([1, 2]).returns(@cats)
     @user.cached_cats.should.equal(@cats)
+    
+    Cat.expects(:get_caches).never
     4.times {@user.cached_cats.should.equal(@cats)}
   end
   
   specify "can be forced to reload already cached cats from memcache" do
-    Cat.expects(:get_caches).times(5).with([1, 2]).returns(@cats)
     @user.cached_cats.should.equal(@cats)
+    Cat.expects(:get_caches).times(4).with([1, 2]).returns({1 => @cats[0], 2 => @cats[1]})
     4.times {@user.cached_cats(true).should.equal(@cats)}
   end
   
@@ -127,10 +127,10 @@ context "A User class acting as cached with has_many_cached :cats" do
   end
   
   specify "should clear its instance association cache when reloaded" do
-    Cat.expects(:get_caches).times(2).with([1, 2]).returns(@cats)
-    
     @user.cached_cats.should.equal(@cats)
     @user.reload
+    
+    Cat.expects(:get_caches).with([1, 2]).returns({1 => @cats[0], 2 => @cats[1]})
     @user.cached_cats.should.equal(@cats)
   end
   
