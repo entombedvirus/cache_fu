@@ -122,7 +122,11 @@ module ActsAsCached
           # If that is a miss, try the cache store next
           if associates.blank? || reload_from_cache
             associate_ids = self.class.cache_store(:get, "#{self.cache_key}:#{ids_reflection}")
-            associates = reflection.klass.get_caches(associate_ids).values if associate_ids
+            
+            if associate_ids
+              cached_values = reflection.klass.get_caches(associate_ids)
+              associates = associate_ids.inject([]) {|mem, val| mem << cached_values[val]}
+            end
           end
           
           # And finally we consult the database if all else fails

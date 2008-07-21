@@ -129,4 +129,13 @@ context "A Ruby class acting as cached with a has_many_cached :through associati
     Cat.expects(:get_caches).with([1, 2]).returns({1 => @cats[0], 2 => @cats[1]})
     @user.cached_cats.should.equal(@cats)
   end
+
+  specify "should preserve duplicate cats owned through different ownerships" do
+    # User 1 owns chester thru 2 dofferent ownership instances
+    new_ownership = Ownership.create(:user_id => 1, :cat_id => 1)
+    
+    @user.cached_cats
+    User.fetch_cache("1:cat_ids").sort.should.equal([1, 1, 2])
+    @user.cached_cats(true).size.should.equal(3)
+  end
 end
