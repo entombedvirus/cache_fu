@@ -73,7 +73,7 @@ context "A Ruby class acting as cached with a has_many_cached :through associati
     new_cat.save
     
     @user.cats << new_cat
-    @user.get_cache("cat_ids").should.equal([1, 2, 3])
+    User.fetch_cache("1:cat_ids").should.equal([1, 2, 3])
   end
 
   specify "should update the cached ids list if a member is added to the association NOT using association proxy" do
