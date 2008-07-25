@@ -2,6 +2,10 @@ require File.join(File.dirname(__FILE__), 'test_helper')
 
 context "A Cat class belongs_to_cached :user" do
   setup do
+    $cache.clear
+    User.delete_all
+    Cat.delete_all
+    
     User.class_eval <<-END_EVAL
       acts_as_cached :store => $cache
     END_EVAL
@@ -15,10 +19,6 @@ context "A Cat class belongs_to_cached :user" do
     @cat = Cat.new(:name => "Chester", :user_id => 1)
     Cat.stubs(:find).returns(@cat)
     User.stubs(:find).returns(@user)
-    
-    $cache.clear
-    User.delete_all
-    Cat.delete_all
   end
   
   specify "should load the owner from cache" do

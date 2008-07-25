@@ -28,7 +28,7 @@ module ActsAsCached
       include Extensions::InstanceMethods if defined? Extensions::InstanceMethods
 
       include ActsAsCached::CacheAssociations
-      include ActsAsCached::MarshallingMethods
+      include ActsAsCached::Marshalling
 
       options.symbolize_keys!
 
