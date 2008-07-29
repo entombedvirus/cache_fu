@@ -1,7 +1,7 @@
 module ActsAsCached
   module CacheAssociations
     def self.included(base)
-      if base.ancestors.select {|constant| constant.is_a?(Class)}.include?(::ActiveRecord::Base)
+      if base.ancestors.select { |constant| constant.is_a?(Class) }.include?(::ActiveRecord::Base)
         base.extend ClassMethods
       end
     end
@@ -147,7 +147,50 @@ module ActsAsCached
           associates
         end
 
-        add_has_many_klass_callbacks!(reflection, ids_reflection)
+        add_has_many_cached_klass_callbacks!(reflection, ids_reflection)
+      end
+      
+      # A macro to define a has_many relationship and the accompanying cache machinery specifically to
+      # handle an association that is paginated and displayed in reverse chronological order (implemented
+      # by ordering using "id DESC").
+      # 
+      #   class User < ActiveRecord::Base
+      #     acts_as_cached
+      #     
+      #     # Blog posts are displayed automagically ordered by "id DESC", 10 at a time.
+      #     has_paginated_list :blog_posts, :limit => 10
+      #   end
+      def has_paginated_list(association_id, options = {})
+        raise ":limit and :order are required options for a has_paginated_list association." unless options[:limit]
+        
+        association_class = options[:class_name] ? options[:class_name].to_s.constantize : association_id.to_s.singularize.camelize.constantize
+        
+        self.has_many(association_id, options.merge({:order => "#{association_class.primary_key} DESC"}))
+        reflection = self.reflections[association_id]
+        singular_reflection = reflection.name.to_s.downcase.singularize
+        ids_reflection = "#{singular_reflection}_ids"
+        
+        define_method "cached_#{reflection.name}" do |*params|
+          force_reload = params.first
+          
+          association = self.cached_associations[reflection.name]
+          
+          if force_reload || (cached_association_ids = self.class.cache_store(:get, "#{self.cache_key}:#{ids_reflection}")).nil?
+            association = self.send(reflection.name.to_sym)
+            self.class.cache_store(:set, "#{self.cache_key}:#{ids_reflection}", association.collect { |record| record.id })
+            association.each { |record| record.set_cache }
+          elsif association.nil?
+            assoc_objs = reflection.klass.get_caches(cached_association_ids)
+            association = assoc_objs.is_a?(Hash) ? assoc_objs.values : assoc_objs
+            association = Array(association).flatten.compact.sort { |a, b| b.send(reflection.klass.primary_key) <=> a.send(reflection.klass.primary_key) } # ORDER BY id DESC
+          end
+          
+          self.cached_associations[reflection.name] = association if association
+          
+          association
+        end
+        
+        add_has_paginated_list_klass_callbacks!(reflection, ids_reflection)
       end
 
       protected
@@ -180,7 +223,24 @@ module ActsAsCached
         end
       end
 
-      def add_has_many_klass_callbacks!(reflection, ids_reflection)
+      def add_has_paginated_list_klass_callbacks!(reflection, ids_reflection)
+        pkey_name = reflection.options[:through] ? reflection.through_reflection.primary_key_name : reflection.primary_key_name
+        skey_name = (reflection.options[:through] && reflection.source_reflection) ? reflection.source_reflection.primary_key_name : :id
+        r = reflection.options[:through] ? reflection.through_reflection : reflection
+        
+        r.klass.after_save do |instance|
+          if instance.changes[pkey_name]
+            
+            key = "#{instance.send(pkey_name)}:#{ids_reflection}"
+            unless (assoc_ids = reflection.active_record.fetch_cache(key)).nil?
+              assoc_ids.unshift(instance.send(skey_name))
+              reflection.active_record.set_cache(key, assoc_ids[0...r.options[:limit]])
+            end
+          end
+        end
+      end
+
+      def add_has_many_cached_klass_callbacks!(reflection, ids_reflection)
         # debugger if reflection.options[:through]
         pkey_name = reflection.options[:through] ? reflection.through_reflection.primary_key_name : reflection.primary_key_name
         skey_name = (reflection.options[:through] && reflection.source_reflection) ? reflection.source_reflection.primary_key_name : :id
