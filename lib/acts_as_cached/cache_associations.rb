@@ -28,7 +28,12 @@ module ActsAsCached
           association = self.cached_associations[reflection.name]
           
           if association.nil? || reload_from_cache
-            association = reflection.klass.get_cache(self.send(reflection.primary_key_name))
+            association = \
+              begin
+                reflection.klass.get_cache(self.send(reflection.primary_key_name)) 
+              rescue ActiveRecord::RecordNotFound => e
+                nil
+              end
             self.cached_associations[reflection.name] = association
           end        
 
