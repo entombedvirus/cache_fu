@@ -201,7 +201,7 @@ module ActsAsCached
       protected
 
       def add_has_one_klass_callbacks!(reflection, ids_reflection)
-        pkey_name = reflection.primary_key_name
+        pkey_name = reflection.primary_key_name.to_s
         skey_name = :id
 
         reflection.klass.after_save do |instance|
@@ -229,7 +229,7 @@ module ActsAsCached
       end
 
       def add_has_paginated_list_klass_callbacks!(reflection, ids_reflection)
-        pkey_name = reflection.options[:through] ? reflection.through_reflection.primary_key_name : reflection.primary_key_name
+        pkey_name = (reflection.options[:through] ? reflection.through_reflection.primary_key_name : reflection.primary_key_name).to_s
         skey_name = (reflection.options[:through] && reflection.source_reflection) ? reflection.source_reflection.primary_key_name : :id
         r = reflection.options[:through] ? reflection.through_reflection : reflection
         
@@ -247,7 +247,7 @@ module ActsAsCached
 
       def add_has_many_cached_klass_callbacks!(reflection, ids_reflection)
         # debugger if reflection.options[:through]
-        pkey_name = reflection.options[:through] ? reflection.through_reflection.primary_key_name : reflection.primary_key_name
+        pkey_name = (reflection.options[:through] ? reflection.through_reflection.primary_key_name : reflection.primary_key_name).to_s
         skey_name = (reflection.options[:through] && reflection.source_reflection) ? reflection.source_reflection.primary_key_name : :id
         r = reflection.options[:through] ? reflection.through_reflection : reflection
 
