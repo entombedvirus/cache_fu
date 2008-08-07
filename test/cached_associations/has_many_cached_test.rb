@@ -100,12 +100,22 @@ context "A User class acting as cached with has_many_cached :cats" do
     @siqi.cached_cat_ids.should.equal([1])
   end
   
-  specify "should not consult memcached on every invocation" do
+  specify "should not consult memcached on every invocation when it does consult the DB" do
     @user.cached_cats.should.equal(@cats)
     
     Cat.expects(:get_caches).never
     4.times {@user.cached_cats.should.equal(@cats)}
   end
+  
+  
+  specify "should not consult memcached on every invocation when it doesn't have to go to the DB" do
+    @user.cached_cat_ids.should.equal([1, 2])
+    @user.cached_cats.should.equal(@cats)
+    
+    Cat.expects(:get_caches).never
+    4.times {@user.cached_cats.should.equal(@cats)}
+  end
+
   
   specify "can be forced to reload already cached cats from memcache" do
     @user.cached_cats.should.equal(@cats)
@@ -158,7 +168,7 @@ context "A User class acting as cached with has_many_cached :cats" do
     @user.cached_cats.should.equal @cats
     @user.class.fetch_cache("1:cat_ids").should.equal([1, 2])
     
-    @user.cached_cats.delete(@cats.first)
+    @user.cats.delete(@cats.first)
     @user.cached_cats.should.equal([@cats[1]])
   end
 end

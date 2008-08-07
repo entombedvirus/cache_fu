@@ -145,10 +145,10 @@ module ActsAsCached
               associates = []
             end
 
-            self.cached_associations[reflection.name] = associates if associates
             self.class.cache_store(:set, "#{self.cache_key}:#{ids_reflection}", associate_ids) if associate_ids
           end
 
+          self.cached_associations[reflection.name] = associates if associates
           associates
         end
 
@@ -291,6 +291,7 @@ module ActsAsCached
         options[:after_remove] ||= []
         options[:after_remove] = Array(options[:after_remove])
         options[:after_remove] << proc { |owner, associate|
+          owner.cached_associations.keys.each { |association| owner.send("cached_#{association.to_s.downcase.singularize}_ids=", nil) }
           owner.cached_associations.clear
         }
       end
