@@ -1,6 +1,6 @@
 require 'acts_as_cached/config'
 require 'acts_as_cached/cache_methods'
-require 'acts_as_cached/cache_associations'
+require 'acts_as_cached/cached_associations'
 require 'acts_as_cached/fragment_cache'
 require 'acts_as_cached/benchmarking' 
 require 'acts_as_cached/disabled'
@@ -27,7 +27,7 @@ module ActsAsCached
       extend  Extensions::ClassMethods    if defined? Extensions::ClassMethods
       include Extensions::InstanceMethods if defined? Extensions::InstanceMethods
 
-      include ActsAsCached::CacheAssociations
+      include ActsAsCached::CachedAssociations
       include ActsAsCached::Marshalling
 
       options.symbolize_keys!
