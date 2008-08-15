@@ -1,11 +1,11 @@
-%w(cached_association_reflection cached_association_proxy has_many_cached_proxy).each { |file| require File.join("acts_as_cached", "cached_associations", file)}
+%w(cached_association_reflection cached_association_proxy has_many_cached).each { |file| require File.join("acts_as_cached", "cached_associations", file)}
 
 module ActsAsCached
   module CachedAssociations
     def self.included(base)
       if base.ancestors.select { |constant| constant.is_a?(Class) }.include?(::ActiveRecord::Base)
-        base.extend ClassMethods
         base.send(:include, InstanceMethods)
+        base.extend ClassMethods
       end
     end
     
@@ -16,14 +16,10 @@ module ActsAsCached
       #   has_many_cached :cats
       # end
       def has_many_cached(association_id, options = {}, &extensions)
+        raise "Cannot have :limit and :order on has_many_cached associations" if options[:order] || options[:limit]
+        
         has_many(association_id, options, &extensions)
-        
-        reflection = create_has_many_cached_reflection(association_id, options)
-        
-        define_method("cached_#{association_id}") do
-          instance_variable_get("@cached_#{association_id}") || 
-            instance_variable_set("@cached_#{association_id}", HasManyCachedProxy.new(self, reflection))
-        end
+        create_has_many_cached_reflection(association_id, options)
       end
       
       def cached_reflections
@@ -33,19 +29,17 @@ module ActsAsCached
       protected
       
       def create_has_many_cached_reflection(name, options)
-        reflection = ActsAsCached::CachedAssociationReflection.new(:has_many_cached, name, options, self)
+        reflection = ActsAsCached::CachedAssociations::HasManyCachedReflection.new(:has_many_cached, name, options, self)
         write_inheritable_hash :cached_reflections, name => reflection
         reflection
-      end
+      end      
     end
    
    module InstanceMethods
-     def cached_associations
-       @cached_associations ||= {}
-     end
-     
      def clear_association_cache
-       self.cached_associations.clear
+       # Clear the association proxy
+       self.class.cached_reflections.each {|name, ref| instance_variable_set("@cached_#{name}", nil)}
+       
        super
      end
    end 
