@@ -49,6 +49,10 @@ module ActsAsCached
         "#{@owner.cache_key}:#{@reflection.name}"
       end
 
+      def non_cached_proxy
+        @non_cached_proxy ||= @owner.send(@reflection.name)
+      end
+      
       private
 
       def method_missing(method, *args, &block)

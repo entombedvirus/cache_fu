@@ -1,4 +1,9 @@
-%w(cached_association_reflection cached_association_proxy has_many_cached).each { |file| require File.join("acts_as_cached", "cached_associations", file)}
+%w(
+  cached_association_reflection 
+  cached_association_proxy 
+  has_many_cached
+  belongs_to_cached
+).each { |file| require File.join("acts_as_cached", "cached_associations", file)}
 
 module ActsAsCached
   module CachedAssociations
@@ -22,6 +27,18 @@ module ActsAsCached
         create_has_many_cached_reflection(association_id, options)
       end
       
+      # Usage:
+      # class User < ActiveRecord::Base
+      # end
+      # 
+      # class Cat < ActiveRecord::Base
+      #   belongs_to_cached :user
+      # end
+      def belongs_to_cached(association_id, options = {}, &extensions)
+        belongs_to(association_id, options, &extensions)
+        create_belongs_to_cached_reflection(association_id, options)
+      end
+      
       def cached_reflections
         read_inheritable_attribute(:cached_reflections) || write_inheritable_attribute(:cached_reflections, {})
       end
@@ -33,6 +50,12 @@ module ActsAsCached
         write_inheritable_hash :cached_reflections, name => reflection
         reflection
       end      
+      
+      def create_belongs_to_cached_reflection(name, options)
+        reflection = ActsAsCached::CachedAssociations::BelongsToCachedReflection.new(:belongs_to_cached, name, options, self)
+        write_inheritable_hash :cached_reflections, name => reflection
+        reflection
+      end
     end
    
    module InstanceMethods

@@ -17,6 +17,16 @@ module ActsAsCached
         send_to_non_cached_proxy(:clear)
       end
       
+      def delete_all
+        @owner.class.cache_store(:delete, self.cache_key)
+        send_to_non_cached_proxy(:delete_all)
+      end
+      
+      def destroy_all
+        @owner.class.cache_store(:delete, self.cache_key)
+        send_to_non_cached_proxy(:destroy_all)
+      end
+      
       private
 
       def load_target
@@ -36,11 +46,7 @@ module ActsAsCached
       
       def send_to_non_cached_proxy(method, *args, &block)
         non_cached_proxy.send(method, *args, &block)
-      end
-      
-      def non_cached_proxy
-        @owner.send(@reflection.name)
-      end
+      end      
     end
   end
 end
