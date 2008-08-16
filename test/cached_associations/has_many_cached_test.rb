@@ -1,20 +1,20 @@
 require File.join(File.dirname(__FILE__), 'test_helper')
 
+User.class_eval <<-END_EVAL
+  acts_as_cached :store => $cache
+  has_many_cached :cats
+END_EVAL
+
+Cat.class_eval <<-END_EVAL
+  acts_as_cached :store => $cache
+END_EVAL
+
 context "User.has_many_cached :cats" do
   setup do
     $cache.clear
     User.delete_all
     Cat.delete_all
-    
-    User.class_eval <<-END_EVAL
-      acts_as_cached :store => $cache
-      has_many_cached :cats
-    END_EVAL
-    
-    Cat.class_eval <<-END_EVAL
-      acts_as_cached :store => $cache
-    END_EVAL
-    
+        
     @user  = User.new(:name => "Bob")
     @user.id = 1; @user.save
     
@@ -153,28 +153,90 @@ context "User.has_many_cached :cats" do
     proc { Owner.has_many_cached :things, :order => "id DESC" }.should.raise(RuntimeError)
     proc { Owner.has_many_cached :things, :limit => 15 }.should.raise(RuntimeError)
   end
-  
-  specify "should update the cached cats list when a cat is added thru the association proxy" do
-    @user.cached_cats.should.equal @cats
-    User.fetch_cache("1:cats").should.equal([1, 2])
+end
+
+context "User.has_many_cached :cats updating the cached cats list thru the association proxy" do
+  setup do
+    $cache.clear
+    User.delete_all
+    Cat.delete_all
     
-    new_cat = Cat.new(:name => "John")
-    new_cat.id = 3
-    @user.cached_cats << new_cat
-    @user.cached_cats.should.equal(@cats + [new_cat])
-    User.fetch_cache("1:cats").should.equal([1, 2, 3])
     
-    another_cat = @user.cached_cats.create(:name => "Garry")
-    @user.cached_cats.should.equal(@cats + [new_cat, another_cat])
-    User.fetch_cache("1:cats").should.equal([1, 2, 3, another_cat.id])
+    @user  = User.new(:name => "Bob")
+    @user.id = 1; @user.save
+    
+    
+    @siqi = User.new(:name => "Siqi")
+    @siqi.id = 2; @user.save
+    
+    @cats = [Cat.new(:name => "Chester", :user_id => 1), Cat.new(:name => "Chester", :user_id => 1)]
+    @cats[0].id = 1; @cats[0].save
+    @cats[1].id = 2; @cats[1].save
   end
   
-  specify "should update the cached cats list when a cat is removed thru the association proxy" do
-    @user.cached_cats.should.equal @cats
-    User.fetch_cache("1:cats").should.equal([1, 2])
+  specify "should update the cached list when the user and cat are new_records" do
+    bob = User.new :name => "Bob"
+    bob.id = 6
+    bobs_cat = Cat.new(:name => "Bob's cat")
+    bobs_cat.id = 7
+    bob.cached_cats << bobs_cat
     
-    @user.cached_cats.delete(@cats.first)
-    @user.cached_cats.should.equal([@cats[1]])
-    User.fetch_cache("1:cats").should.equal([2])
-  end  
+    bob.cached_cats.should.equal([bobs_cat])
+    bob.save!
+
+    bob.reload.cached_cats.should.equal([bobs_cat])
+    bob.should.have.cached "cats"
+    User.fetch_cache("#{bob.id}:cats").should.equal([bobs_cat.id])
+  end
+  
+  specify "should update the cached list when the user is a new_record and cat is not" do
+    bob = User.new :name => "Bob"
+    bob.id = 8
+    
+    bobs_cat = Cat.new(:name => "Bob's cat")
+    bobs_cat.id = 9
+    bobs_cat.save!
+    
+    bob.cached_cats << bobs_cat
+    bob.cached_cats.should.equal([bobs_cat])
+    bob.save!
+    
+    bob.reload.cached_cats.should.equal([bobs_cat])
+    bob.should.have.cached "cats"
+    User.fetch_cache("#{bob.id}:cats").should.equal([bobs_cat.id])    
+  end
+
+  specify "should update the cached list when the user is not a new_record and the cat is" do
+    bob = User.new :name => "Bob"
+    bob.id = 8
+    bob.save!
+    
+    bobs_cat = Cat.new(:name => "Bob's cat")
+    bobs_cat.id = 9
+    
+    bob.cached_cats << bobs_cat
+    bobs_cat.should.not.be.new_record
+    bob.cached_cats.should.equal([bobs_cat])
+    
+    bob.reload.cached_cats.should.equal([bobs_cat])
+    bob.should.have.cached "cats"
+    User.fetch_cache("#{bob.id}:cats").should.equal([bobs_cat.id])    
+  end
+  
+  specify "should update the cached list when the user and the cats are not new_records" do
+    bob = User.new :name => "Bob"
+    bob.id = 8
+    bob.save!
+    
+    bobs_cat = Cat.new(:name => "Bob's cat")
+    bobs_cat.id = 9
+    bobs_cat.save!
+    
+    bob.cached_cats << bobs_cat
+    bob.cached_cats.should.equal([bobs_cat])
+    
+    bob.reload.cached_cats.should.equal([bobs_cat])
+    bob.should.have.cached "cats"
+    User.fetch_cache("#{bob.id}:cats").should.equal([bobs_cat.id])        
+  end
 end
