@@ -11,7 +11,7 @@ module ActsAsCached
           options[:source_type] || source_reflection.class_name
         else
           class_name = name.to_s.camelize
-          class_name = class_name.singularize if [ :has_many_cached ].include?(macro)
+          class_name = class_name.singularize if [ :has_many_cached :has_paginated_list ].include?(macro)
           class_name
         end
       end
