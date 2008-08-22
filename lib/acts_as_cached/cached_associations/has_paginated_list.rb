@@ -39,8 +39,8 @@ module ActsAsCached
       end
     
       def add_klass_callbacks!
-        pkey_name =  self.options[:through] ? self.through_reflection.primary_key_name : self.primary_key_name).to_s
-        skey_name =  self.options[:through] && self.source_reflection) ? self.source_reflection.primary_key_name : :id
+        pkey_name =  self.options[:through] ? self.through_reflection.primary_key_name : self.primary_key_name
+        skey_name =  (self.options[:through] && self.source_reflection) ? self.source_reflection.primary_key_name : :id
         r = self.options[:through] ? self.through_reflection : self
         
         r.klass.after_save do |instance|
