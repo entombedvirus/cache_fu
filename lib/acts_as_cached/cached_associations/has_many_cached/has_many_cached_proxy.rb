@@ -38,8 +38,8 @@ module ActsAsCached
           associates
         else # And then the database
           associates = @owner.send(@reflection.name)
-          associate_ids = associates.collect(&:id)
-          @owner.class.cache_store(:set, self.cache_key, associate_ids) unless associate_ids.nil?
+          associate_ids = associates.collect(&:id).compact
+          @owner.class.cache_store(:set, self.cache_key, associate_ids)
           associates
         end
       end

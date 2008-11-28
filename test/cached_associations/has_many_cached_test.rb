@@ -1,5 +1,9 @@
 require File.join(File.dirname(__FILE__), 'test_helper')
 
+# The reason this is outside the setup method is because changes made to the User and Cat class
+# persist across the various test / specify clauses (because classes are not reset between tests).
+# If you put this code inside the setup method, it gives the impression that you can start a new
+# context and define a new setup method. This will result in consistencies.
 User.class_eval <<-END_EVAL
   acts_as_cached :store => $cache
   has_many_cached :cats
@@ -20,7 +24,7 @@ context "User.has_many_cached :cats" do
     
     
     @siqi = User.new(:name => "Siqi")
-    @siqi.id = 2; @user.save
+    @siqi.id = 2; @siqi.save
     
     @cats = [Cat.new(:name => "Chester", :user_id => 1), Cat.new(:name => "Chester", :user_id => 1)]
     @cats[0].id = 1; @cats[0].save
@@ -167,7 +171,7 @@ context "User.has_many_cached :cats updating the cached cats list thru the assoc
     
     
     @siqi = User.new(:name => "Siqi")
-    @siqi.id = 2; @user.save
+    @siqi.id = 2; @siqi.save
     
     @cats = [Cat.new(:name => "Chester", :user_id => 1), Cat.new(:name => "Chester", :user_id => 1)]
     @cats[0].id = 1; @cats[0].save
@@ -238,5 +242,12 @@ context "User.has_many_cached :cats updating the cached cats list thru the assoc
     bob.reload.cached_cats.should.equal([bobs_cat])
     bob.should.have.cached "cats"
     User.fetch_cache("#{bob.id}:cats").should.equal([bobs_cat.id])        
+  end
+  
+  specify "should skip cache logic for unsaved records" do
+    alex = User.new
+    alex.cat_ids = [1, 2]
+    
+    alex.cached_cat_ids.should.equal([1, 2])
   end
 end

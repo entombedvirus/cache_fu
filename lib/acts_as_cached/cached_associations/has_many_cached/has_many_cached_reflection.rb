@@ -22,6 +22,7 @@ module ActsAsCached
           # At this point, self refers to User
           define_method("cached_#{reflection.name}") do |*params|
             # And here self refers to some user object
+            return self.send(reflection.name) if self.new_record?
             
             force_load_from_cache = params.first
             returning(instance_variable_get("@cached_#{reflection.name}") || instance_variable_set("@cached_#{reflection.name}", HasManyCachedProxy.new(self, reflection))) do |proxy|
@@ -30,8 +31,10 @@ module ActsAsCached
           end
           
           define_method("cached_#{reflection.association_ids_msg}") do |*params|
+            return self.send(reflection.association_ids_msg) if self.new_record?
+            
             force_reload = params.first unless params.empty?
-            proxy = send("cached_#{reflection.name}")
+            proxy = send("cached_#{reflection.name}", force_reload)
             cached_association = self.class.cache_store(:get, proxy.cache_key)
 
             if cached_association.nil? || force_reload

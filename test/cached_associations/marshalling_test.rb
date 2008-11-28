@@ -1,20 +1,20 @@
 require File.join(File.dirname(__FILE__), 'test_helper')
 
+User.class_eval <<-END_EVAL
+  acts_as_cached :store => $cache
+  has_many_cached :cats
+END_EVAL
+
+Cat.class_eval <<-END_EVAL
+  acts_as_cached :store => $cache
+END_EVAL
+
 context "An ActiveRecord class acting as cached" do
   
   setup do
     $cache.clear
     User.delete_all
     Cat.delete_all
-    
-    User.class_eval <<-END_EVAL
-      acts_as_cached :store => $cache
-      has_many_cached :cats
-    END_EVAL
-    
-    Cat.class_eval <<-END_EVAL
-      acts_as_cached :store => $cache
-    END_EVAL
     
     @user  = User.new(:name => "Bob")
     @user.id = 1; @user.save

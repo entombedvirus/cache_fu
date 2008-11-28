@@ -12,6 +12,8 @@ module ActsAsCached
         reflection = self
         reflection.active_record.class_eval do
           define_method("cached_#{reflection.name}") do |*params|
+            return self.send(reflection.name) if self.new_record?
+            
             reload_from_cache = params.first
             association = instance_variable_get("@cached_#{reflection.name}")
 
