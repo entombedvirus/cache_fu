@@ -77,6 +77,8 @@ module ActsAsCached
     def set_cache(cache_id, value, ttl = nil)
       returning(value) do |v|
         v = @@nil_sentinel if v.nil?
+        v.instance_variable_set(:@loaded_from_cache, true) unless v == @@nil_sentinel
+        
         cache_store(:set, cache_key(cache_id), v, ttl || cache_config[:ttl] || 1500)
       end
     end
@@ -148,7 +150,10 @@ module ActsAsCached
       return if ActsAsCached.config[:skip_gets]
 
       autoload_missing_constants do 
-        cache_store(:get, cache_key(cache_id))
+        item = cache_store(:get, cache_key(cache_id))
+        item.instance_variable_set(:@loaded_from_cache, true) unless item == @@nil_sentinel
+        
+        item
       end
     end
     
@@ -274,6 +279,10 @@ module ActsAsCached
     end
     alias :cached :caches
 
+    def loaded_from_cache?
+      !!@loaded_from_cache
+    end
+    
     # Ryan King
     def set_cache_with_associations
       Array(cache_options[:include]).each do |assoc|

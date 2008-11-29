@@ -6,6 +6,7 @@ require 'acts_as_cached/benchmarking'
 require 'acts_as_cached/disabled'
 require 'acts_as_cached/local_cache'
 require 'acts_as_cached/marshalling'
+require 'acts_as_cached/has_cached_attr'
 
 module ActsAsCached
   @@config = {}
@@ -30,6 +31,8 @@ module ActsAsCached
       include ActsAsCached::CachedAssociations
       include ActsAsCached::Marshalling
 
+      include ActsAsCached::HasCachedAttr
+      
       options.symbolize_keys!
 
       options[:store] ||= ActsAsCached.config[:store] 
