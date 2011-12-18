@@ -93,7 +93,7 @@ context "The global cache configuration" do
     ActsAsCached.config[:fastest_hash].should.equal true
     CACHE.hash_for(string = 'eatingsnotcheating').should.equal string.hash
   end
-  
+
 end
 
 
@@ -113,12 +113,12 @@ context "The class configuration" do
     setup_cached :finder => :find_by_title
     Story.cache_config[:finder].should.equal :find_by_title
   end
-  
+
   specify "should be able to override the default cache_id" do
     setup_cached :cache_id => :title
     Story.cache_config[:cache_id].should.equal :title
   end
-  
+
   specify "should be able to override the default finder and the cache_id using find_by" do
     setup_cached :find_by => :title
     Story.cache_config.should.not.include :find

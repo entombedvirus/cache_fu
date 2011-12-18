@@ -1,8 +1,8 @@
 ##
-# This file exists to fake out all the Railsisms we use so we can run the 
+# This file exists to fake out all the Railsisms we use so we can run the
 # tests in isolation.
 $LOAD_PATH.unshift 'lib/'
-# 
+#
 
 begin
   require 'rubygems'
@@ -68,7 +68,7 @@ class HashStore < Hash
   def set(key, value, *others)
     self[key] = value
   end
-  
+
   def namespace
     nil
   end
@@ -94,7 +94,7 @@ class Story
     attributes == other.attributes
   end
 
-  def self.find(*args) 
+  def self.find(*args)
     options = args.last.is_a?(Hash) ? args.pop : {}
 
     if (ids = args.flatten).size > 1
@@ -103,7 +103,7 @@ class Story
       $stories[id.to_i]
     end
   end
-  
+
   def self.find_by_title(*args)
     title = args.shift
     find(args).select { |s| s.title == title }
@@ -149,8 +149,8 @@ end unless $with_memcache
 
 module StoryCacheSpecSetup
   def self.included(base)
-    base.setup do 
-      setup_cache_spec 
+    base.setup do
+      setup_cache_spec
       Story.instance_eval { @max_key_length = nil }
     end
   end
@@ -193,7 +193,7 @@ module FragmentCacheSpecSetup
   def self.included(base)
     base.setup { setup_fragment_spec }
   end
-  
+
   def setup_fragment_spec
     unless $mc_setup_for_fragment_cache_spec
       ActsAsCached.config.clear

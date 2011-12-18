@@ -4,12 +4,12 @@ module ActsAsCached
       class << CACHE
         include Extensions
       end
-      
+
       setup_fragment_cache_cache
       setup_rails_for_memcache_fragments
       setup_rails_for_action_cache_options
     end
-    
+
     # add :ttl option to cache helper and set cache store memcache object
     def self.setup_rails_for_memcache_fragments
       ::ActionView::Helpers::CacheHelper.class_eval do
@@ -23,9 +23,9 @@ module ActsAsCached
     def self.setup_fragment_cache_cache
       Object.const_set(:FragmentCacheCache, Class.new { acts_as_cached :store => CACHE })
     end
-    
+
     # add :ttl option to caches_action on the per action level by passing in a hash instead of an array
-    # 
+    #
     # Examples:
     #  caches_action :index                                       # will use the default ttl from your memcache.yml, or 25 minutes
     #  caches_action :index => { :ttl => 5.minutes }              # cache index action with 5 minute ttl
@@ -60,7 +60,7 @@ module ActsAsCached
           else
             action_cache_path = ActionController::Caching::Actions::ActionCachePath.new(controller)
           end
-          
+
           # should probably be like ActiveRecord::Validations.evaluate_condition.  color me lazy.
           if conditional = @actions[controller.action_name.intern][:if]
             conditional = conditional.respond_to?(:call) ? conditional.call(controller) : controller.send(conditional)
@@ -82,7 +82,7 @@ module ActsAsCached
             controller.action_cache_path = action_cache_path if controller.respond_to? :action_cache_path
           end
         end
-        
+
         # override to pass along the ttl hash
         def after(controller)
           return if !@actions.include?(controller.action_name.intern) || controller.rendered_action_cache
@@ -103,8 +103,8 @@ module ActsAsCached
         return if ActsAsCached.config[:skip_gets]
         FragmentCacheCache.cache_store(:get, args.first)
       end
-      
-      def write(name, content, options = {}) 
+
+      def write(name, content, options = {})
         ttl = (options.is_a?(Hash) ? options[:ttl] : nil) || ActsAsCached.config[:ttl] || 25.minutes
         FragmentCacheCache.cache_store(:set, name, content, ttl)
       end

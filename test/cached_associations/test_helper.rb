@@ -37,7 +37,7 @@ module ActiveRecord
       base.alias_method_chain :save_with_validation!, :changed
       base.alias_method_chain :create, :changed
     end
-    
+
     def changes
       @changes ||= {}.with_indifferent_access
     end
@@ -50,8 +50,8 @@ module ActiveRecord
       changed_attributes << attr_name.to_s
       write_attribute_without_changed(attr_name, value)
     end
-    
-    def update_without_timestamps_with_changed      
+
+    def update_without_timestamps_with_changed
       quoted_attributes = attributes_with_quotes(false, false)
       quoted_attributes.reject! { |key, value| !changed_attributes.include?(key.to_s)}
       return 0 if quoted_attributes.empty?
@@ -65,7 +65,7 @@ module ActiveRecord
     ensure
       changed_attributes.clear
     end
-    
+
     def changed_attributes
       @changed_attributes ||= Set.new
     end
@@ -75,16 +75,16 @@ module ActiveRecord
     ensure
       changed_attributes.clear
     end
-    
+
     def save_with_validation_with_changed
-      save_with_validation_without_changed 
-    ensure 
+      save_with_validation_without_changed
+    ensure
       changed_attributes.clear
     end
 
     def save_with_validation_with_changed!
-      save_with_validation_without_changed! 
-    ensure 
+      save_with_validation_without_changed!
+    ensure
       changed_attributes.clear
     end
 
@@ -106,7 +106,7 @@ class HashStore < Hash
   def set(key, value, *others)
     self[key] = value
   end
-  
+
   def namespace
     nil
   end

@@ -3,12 +3,12 @@ class Memcached
   class Rails < ::Memcached
     def initialize(config)
       super(config.delete(:servers), config.slice(DEFAULTS.keys))
-    end   
+    end
 
     def servers=(servers)
-      
+
     end
-    
+
     def delete(key, expiry = 0)
       super(key)
     rescue NotFound

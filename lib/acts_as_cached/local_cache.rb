@@ -16,7 +16,7 @@ module ActsAsCached
       expire_cache_without_local_cache(*args)
     end
     alias :clear_cache_with_local_cache :expire_cache_with_local_cache
-    
+
     def cached_with_local_cache?(*args)
       !!@@local_cache[cache_key(args.first)] || cached_without_local_cache?(*args)
     end
@@ -37,8 +37,8 @@ end
 module ActionController
   class Base
     def local_cache_for_request
-      ActsAsCached::LocalCache.add_to ActsAsCached::ClassMethods 
+      ActsAsCached::LocalCache.add_to ActsAsCached::ClassMethods
       ActsAsCached::LocalCache.local_cache = {}
     end
   end
-end 
+end

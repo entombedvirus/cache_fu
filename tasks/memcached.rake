@@ -1,19 +1,19 @@
 require 'yaml'
 
 namespace :memcached do
-  desc "Start memcached locally" 
+  desc "Start memcached locally"
   task :start do
     memcached config_args
     puts "memcached started"
   end
 
-  desc "Restart memcached locally" 
+  desc "Restart memcached locally"
   task :restart do
     Rake::Task['memcached:stop'].invoke
     Rake::Task['memcached:start'].invoke
   end
 
-  desc "Stop memcached locally" 
+  desc "Stop memcached locally"
   task :stop do
     `killall memcached`
     puts "memcached killed"

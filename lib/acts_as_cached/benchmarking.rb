@@ -63,11 +63,11 @@ module ActsAsCached
 end
 
 module ActionController
-  class Base 
+  class Base
     def rendering_runtime_with_memcache(runtime) #:nodoc:
       cache_runtime = ActsAsCached::Benchmarking.cache_runtime
       ActsAsCached::Benchmarking.cache_reset_runtime
       rendering_runtime_without_memcache(runtime) + (cache_runtime.nonzero? ? " | Memcache: #{"%.5f" % cache_runtime}" : '')
     end
   end
-end 
+end

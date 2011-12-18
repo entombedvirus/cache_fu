@@ -1,5 +1,5 @@
 ##
-# Copy this file to vendor/plugins/acts_as_cached/extensions.rb if you 
+# Copy this file to vendor/plugins/acts_as_cached/extensions.rb if you
 # wish to extend acts_as_cached with your own instance or class methods.
 #
 # You can, of course, do this directly in your cached classes,
@@ -9,7 +9,7 @@ module ActsAsCached
   module Extensions
     module ClassMethods
       ##
-      # All acts_as_cached classes will be extended with 
+      # All acts_as_cached classes will be extended with
       # this method.
       #
       # >> Story.multi_get_cache(13, 353, 1231, 505)
@@ -21,7 +21,7 @@ module ActsAsCached
 
     module InstanceMethods
       ##
-      # All instances of a acts_as_cached class will be 
+      # All instances of a acts_as_cached class will be
       # extended with this method.
       #
       # => story = Story.get_cache(1)
@@ -30,7 +30,7 @@ module ActsAsCached
       # => true
       def reset_included_caches
         return false unless associations = cache_config[:include]
-        associations.each do |association| 
+        associations.each do |association|
           Array(send(association)).each { |item| item.reset_cache }
         end
         true
