@@ -27,7 +27,7 @@ context "When the cache is disabled" do
     Story.expects(:find).at_least_once.returns(@story2)
     @story2.reset_cache.should.equal @story2
   end
-  
+
   specify "set_cache should just return the object" do
     $cache.expects(:set).never
     @story2.set_cache.should.equal @story2

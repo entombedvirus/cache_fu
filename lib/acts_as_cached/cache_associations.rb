@@ -11,7 +11,7 @@ module ActsAsCached
           def cached_associations
             @cached_associations ||= {}
           end
-          
+
           def clear_association_cache
             self.cached_associations.clear
             super
@@ -26,16 +26,16 @@ module ActsAsCached
         define_method("cached_#{reflection.name}") do |*params|
           reload_from_cache = params.first
           association = self.cached_associations[reflection.name]
-          
+
           if association.nil? || reload_from_cache
             association = \
               begin
-                reflection.klass.get_cache(self.send(reflection.primary_key_name)) 
+                reflection.klass.get_cache(self.send(reflection.primary_key_name))
               rescue ActiveRecord::RecordNotFound => e
                 nil
               end
             self.cached_associations[reflection.name] = association
-          end        
+          end
 
           association
         end
@@ -86,9 +86,9 @@ module ActsAsCached
 
       def has_many_cached(association_id, options = {})
         raise ":order and :limit are not allowed as valid options for a has_many_cached association." if options[:order] || options[:limit]
-        
+
         add_has_many_association_callbacks!(options)
-        
+
         self.has_many(association_id, options)
         reflection = self.reflections[association_id]
         singular_reflection = reflection.name.to_s.downcase.singularize
@@ -119,21 +119,21 @@ module ActsAsCached
 
         define_method("cached_#{reflection.name}") do |*params|
           reload_from_cache = params.first
-          
+
           # Try the instance cache first
           associates = self.cached_associations[reflection.name]
           associate_ids = nil
-          
+
           # If that is a miss, try the cache store next
           if associates.blank? || reload_from_cache
             associate_ids = self.class.cache_store(:get, "#{self.cache_key}:#{ids_reflection}")
-            
+
             if associate_ids
               cached_values = reflection.klass.get_caches(associate_ids)
               associates = associate_ids.inject([]) {|mem, val| mem << cached_values[val]}
             end
           end
-          
+
           # And finally we consult the database if all else fails
           if associates.blank?
             associates = send(reflection.name, *params).to_a
@@ -154,32 +154,32 @@ module ActsAsCached
 
         add_has_many_cached_klass_callbacks!(reflection, ids_reflection)
       end
-      
+
       # A macro to define a has_many relationship and the accompanying cache machinery specifically to
       # handle an association that is paginated and displayed in reverse chronological order (implemented
       # by ordering using "id DESC").
-      # 
+      #
       #   class User < ActiveRecord::Base
       #     acts_as_cached
-      #     
+      #
       #     # Blog posts are displayed automagically ordered by "id DESC", 10 at a time.
       #     has_paginated_list :blog_posts, :limit => 10
       #   end
       def has_paginated_list(association_id, options = {})
         raise ":limit and :order are required options for a has_paginated_list association." unless options[:limit]
-        
+
         association_class = options[:class_name] ? options[:class_name].to_s.constantize : association_id.to_s.singularize.camelize.constantize
-        
+
         self.has_many(association_id, options.merge({:order => "#{association_class.primary_key} DESC"}))
         reflection = self.reflections[association_id]
         singular_reflection = reflection.name.to_s.downcase.singularize
         ids_reflection = "#{singular_reflection}_ids"
-        
+
         define_method "cached_#{reflection.name}" do |*params|
           force_reload = params.first
-          
+
           association = self.cached_associations[reflection.name]
-          
+
           if force_reload || (cached_association_ids = self.class.cache_store(:get, "#{self.cache_key}:#{ids_reflection}")).nil?
             association = self.send(reflection.name.to_sym)
             self.class.cache_store(:set, "#{self.cache_key}:#{ids_reflection}", association.collect { |record| record.id })
@@ -189,12 +189,12 @@ module ActsAsCached
             association = assoc_objs.is_a?(Hash) ? assoc_objs.values : assoc_objs
             association = Array(association).flatten.compact.sort { |a, b| b.send(reflection.klass.primary_key) <=> a.send(reflection.klass.primary_key) } # ORDER BY id DESC
           end
-          
+
           self.cached_associations[reflection.name] = association if association
-          
+
           association
         end
-        
+
         add_has_paginated_list_klass_callbacks!(reflection, ids_reflection)
       end
 
@@ -232,10 +232,10 @@ module ActsAsCached
         pkey_name = (reflection.options[:through] ? reflection.through_reflection.primary_key_name : reflection.primary_key_name).to_s
         skey_name = (reflection.options[:through] && reflection.source_reflection) ? reflection.source_reflection.primary_key_name : :id
         r = reflection.options[:through] ? reflection.through_reflection : reflection
-        
+
         r.klass.after_save do |instance|
           if instance.changes[pkey_name]
-            
+
             key = "#{instance.send(pkey_name)}:#{ids_reflection}"
             unless (assoc_ids = reflection.active_record.fetch_cache(key)).nil?
               assoc_ids.unshift(instance.send(skey_name))
@@ -265,7 +265,7 @@ module ActsAsCached
             # if we are doing an update of the foreign_key rather than an insert, make sure we remove ourselves from our old parent's cache
             key = "#{instance.changes[pkey_name].first}:#{ids_reflection}"
             unless instance.changes[pkey_name].first.nil? || (assoc_ids = reflection.active_record.fetch_cache(key)).nil?
-              assoc_ids.delete(instance.send(skey_name))          
+              assoc_ids.delete(instance.send(skey_name))
               reflection.active_record.set_cache(key, assoc_ids.uniq)
             end
           end
@@ -280,14 +280,14 @@ module ActsAsCached
           end
         end
       end
-      
+
       def add_has_many_association_callbacks!(options)
         options[:after_add] ||= []
         options[:after_add] = Array(options[:after_add])
         options[:after_add] << proc { |owner, associate|
           owner.cached_associations.clear
         }
-        
+
         options[:after_remove] ||= []
         options[:after_remove] = Array(options[:after_remove])
         options[:after_remove] << proc { |owner, associate|
@@ -296,7 +296,7 @@ module ActsAsCached
         }
       end
     end
-    
-    
+
+
   end
 end

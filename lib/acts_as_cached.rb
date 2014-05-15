@@ -2,7 +2,7 @@ require 'acts_as_cached/config'
 require 'acts_as_cached/cache_methods'
 require 'acts_as_cached/cache_associations'
 require 'acts_as_cached/fragment_cache'
-require 'acts_as_cached/benchmarking' 
+require 'acts_as_cached/benchmarking'
 require 'acts_as_cached/disabled'
 require 'acts_as_cached/local_cache'
 require 'acts_as_cached/marshalling'
@@ -32,15 +32,15 @@ module ActsAsCached
 
       options.symbolize_keys!
 
-      options[:store] ||= ActsAsCached.config[:store] 
-      options[:ttl]   ||= ActsAsCached.config[:ttl] 
+      options[:store] ||= ActsAsCached.config[:store]
+      options[:ttl]   ||= ActsAsCached.config[:ttl]
 
       # convert the find_by shorthand
       if find_by = options.delete(:find_by)
         options[:finder]   = "find_by_#{find_by}".to_sym
         options[:cache_id] = find_by
       end
-      
+
       cache_config.replace  options.reject { |key,| not Config.valued_keys.include? key }
       cache_options.replace options.reject { |key,| Config.valued_keys.include? key }
 

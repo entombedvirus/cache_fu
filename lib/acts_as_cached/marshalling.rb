@@ -7,12 +7,12 @@ module ActsAsCached
         EOM
       end
     end
-    
+
     module InstanceMethods
       def marshal_dump
         self.attributes
       end
-    
+
       def marshal_load(attributes)
         self.instance_variable_set("@attributes", attributes)
         self.instance_variable_set("@attributes_cache", Hash.new)
@@ -27,6 +27,6 @@ module ActsAsCached
 
         self
       end
-    end    
+    end
   end
 end

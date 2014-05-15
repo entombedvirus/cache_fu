@@ -13,7 +13,7 @@ A rewrite of acts_as_cached.
 
 - has_many :through relationships are also supported. For example: When a User.has_many_cached :cats, :through => :ownerships,
   Saving and destroying Ownership objects will update the corresponding User's cache.
-  
+
 - Similarly, has_one_cached and belongs_to_cached is also supported.
 
 == Usage

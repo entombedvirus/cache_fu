@@ -7,29 +7,29 @@ context "A User class acting as cached with a has_many_cached :cats" do
       acts_as_cached :store => $cache
       has_one_cached :cat
     END_EVAL
-    
+
     Cat.class_eval <<-END_EVAL
       acts_as_cached :store => $cache
     END_EVAL
-    
+
     @user  = User.new(:name => "Bob")
     @user.id = 1
     @user.stubs(:cat_id).returns(1)
-    
+
     @siqi = User.new(:name => "Siqi")
     @siqi.id = 2
-    
+
     @cat = Cat.new(:name => "Chester", :user_id => 1)
     @cat.id = 1
-    
+
     Cat.stubs(:find).returns(@cat)
     User.stubs(:find).returns(@user)
-    
+
     $cache.clear
     User.delete_all
     Cat.delete_all
   end
-  
+
   specify "should be able to retrieve cat from cache" do
     Cat.expects(:get_cache).with(1).returns(@cat)
     @user.cached_cat.should.equal @cat
@@ -49,7 +49,7 @@ context "A User class acting as cached with a has_many_cached :cats" do
   end
 
   specify "should not cache anything if the user does not have a cat" do
-    @user.stubs(:cat_id).returns(nil)    
+    @user.stubs(:cat_id).returns(nil)
     @user.cached_cat.should.equal(nil)
     @user.should.not.have.cached "cat_id"
   end
@@ -105,27 +105,27 @@ context "A User class acting as cached with a has_many_cached :cats" do
 
     @user.should.not.have.cached "cat_id"
   end
-  
+
   specify "should not consult memcached on every invocation" do
     Cat.expects(:get_cache).once.with(1).returns(@cat)
     @user.cached_cat.should.equal(@cat)
     4.times {@user.cached_cat.should.equal(@cat)}
   end
-  
+
   specify "can be forced to reload an already cached cat from memcache" do
     Cat.expects(:get_cache).times(5).with(1).returns(@cat)
     @user.cached_cat.should.equal(@cat)
     4.times {@user.cached_cat(true).should.equal(@cat)}
   end
-  
+
   specify "should be able to override cached cat ids manually" do
     @user.cached_cat.should.equal(@cat)
     @user.cached_cat_id.should.equal(1)
-    
+
     @other_cat = Cat.new(:name => "Man Eating Cat", :user_id => 1)
     Cat.expects(:get_cache).with(2).returns(@other_cat)
     @user.cached_cat_id = 2
-    
+
     @user.cached_cat.should.equal(@other_cat)
     # We're just changing the cache, the association in db should still point to the old cat
     @user.cat_id.should.equal(1)
@@ -133,7 +133,7 @@ context "A User class acting as cached with a has_many_cached :cats" do
 
   specify "should clear its instance association cache when reloaded" do
     Cat.expects(:get_cache).times(2).with(1).returns(@cat)
-    
+
     @user.cached_cat.should.equal(@cat)
     @user.reload
     @user.cached_cat.should.equal(@cat)

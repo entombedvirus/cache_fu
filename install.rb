@@ -26,7 +26,7 @@ def copy_file(in_file, out_file)
   puts "** Trying to copy #{File.basename(in_file)} to #{out_file}..."
   begin
     if File.exists? out_file
-      puts "!! You already have a #{out_file}.  " +  
+      puts "!! You already have a #{out_file}.  " +
            "Please check the default for new settings or format changes. !!"
       puts "!! You can find the default at #{in_file}. !!"
       $errors += 1

@@ -22,8 +22,8 @@ module ActsAsCached
 
       ##
       # head off to get_caches if we were passed multiple cache_ids
-      if args.size > 1 
-        return get_caches(args, options) 
+      if args.size > 1
+        return get_caches(args, options)
       else
         cache_id = args.first
       end
@@ -36,8 +36,8 @@ module ActsAsCached
     end
 
     ##
-    # This method accepts an array of cache_ids which it will use to call 
-    # get_multi on your cache store.  Any misses will be fetched and saved to 
+    # This method accepts an array of cache_ids which it will use to call
+    # get_multi on your cache store.  Any misses will be fetched and saved to
     # the cache, and a hash keyed by cache_id will ultimately be returned.
     #
     # If your cache store does not support #get_multi an exception will be raised.
@@ -82,7 +82,7 @@ module ActsAsCached
     end
 
     def expire_cache(cache_id = nil)
-      cache_store(:delete, cache_key(cache_id)) 
+      cache_store(:delete, cache_key(cache_id))
       true
     end
     alias :clear_cache :expire_cache
@@ -117,7 +117,7 @@ module ActsAsCached
     #   def self.cached_find_popular
     #     get_cache("find_popular:today") { find_popular(:today) }
     #   end
-    #   
+    #
     # If your target method accepts multiple parameters, pass :withs an array.
     #
     # => Story.caches(:find_popular, :withs => [ :one, :two ])
@@ -128,7 +128,7 @@ module ActsAsCached
     #     get_cache("find_popular:onetwo") { find_popular(:one, :two) }
     #   end
     def caches(method, options = {})
-      if options.keys.include?(:with) 
+      if options.keys.include?(:with)
         with = options.delete(:with)
         get_cache("#{method}:#{with}", options) { send(method, with) }
       elsif withs = options.delete(:withs)
@@ -147,15 +147,15 @@ module ActsAsCached
     def fetch_cache(cache_id)
       return if ActsAsCached.config[:skip_gets]
 
-      autoload_missing_constants do 
+      autoload_missing_constants do
         cache_store(:get, cache_key(cache_id))
       end
     end
-    
+
     def cache_finder
       cache_config[:finder] || :find
     end
-    
+
     def fetch_cachable_data(cache_id = nil)
       return send(cache_finder) unless cache_id
 
@@ -165,11 +165,11 @@ module ActsAsCached
       # results
       send(cache_finder, *args)
     end
-    
+
     def cache_namespace
       cache_store(:namespace)
     end
-    
+
     # Memcache-client automatically prepends the namespace, plus a colon, onto keys, so we take that into account for the max key length.
     # Rob Sanheim
     def max_key_length
@@ -209,8 +209,8 @@ module ActsAsCached
         nil
       end
     rescue TypeError => error
-      if error.to_s.include? 'Proc' 
-        raise MarshalError, "Most likely an association callback defined with a Proc is triggered, see http://ar.rubyonrails.com/classes/ActiveRecord/Associations/ClassMethods.html (Association Callbacks) for details on converting this to a method based callback" 
+      if error.to_s.include? 'Proc'
+        raise MarshalError, "Most likely an association callback defined with a Proc is triggered, see http://ar.rubyonrails.com/classes/ActiveRecord/Associations/ClassMethods.html (Association Callbacks) for details on converting this to a method based callback"
       else
         raise error
       end
@@ -255,7 +255,7 @@ module ActsAsCached
     def cache_key
       self.class.cache_key(cache_id)
     end
-    
+
     def cache_id(key = nil)
       id = send(cache_config[:cache_id] || :id)
       key.nil? ? id : "#{id}:#{key}"
@@ -286,10 +286,10 @@ module ActsAsCached
     def expire_cache_with_associations(*associations_to_sweep)
       (Array(cache_options[:include]) + associations_to_sweep).flatten.uniq.compact.each do |assoc|
         Array(send(assoc)).compact.each { |item| item.expire_cache if item.respond_to?(:expire_cache) }
-      end 
+      end
       expire_cache
     end
   end
-  
+
   class MarshalError < StandardError; end
 end

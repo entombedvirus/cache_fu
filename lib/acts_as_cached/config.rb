@@ -13,8 +13,8 @@ module ActsAsCached
       config = options['defaults']
 
       case options[RAILS_ENV]
-      when Hash   then config.update(options[RAILS_ENV]) 
-      when String then config[:disabled] = true 
+      when Hash   then config.update(options[RAILS_ENV])
+      when String then config[:disabled] = true
       end
 
       config.symbolize_keys!
@@ -30,7 +30,7 @@ module ActsAsCached
     end
 
     def setup_cache_store!(config)
-      config[:store] = 
+      config[:store] =
         if config[:store].nil?
           setup_memcache config
         elsif config[:store].respond_to? :constantize

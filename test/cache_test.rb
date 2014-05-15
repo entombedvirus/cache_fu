@@ -57,7 +57,7 @@ context "A Ruby class acting as cached (in general)" do
   end
 
   specify "should be able to cache arbitrary methods with arguments using #caches and :withs" do
-    withs = [ :first, :second ] 
+    withs = [ :first, :second ]
 
     cached_string = "first: #{withs.first} | second: #{withs.last}"
 
@@ -148,16 +148,16 @@ context "A Ruby class acting as cached (in general)" do
   end
 
   specify "should modify its cache key to reflect a :version option" do
-    Story.cache_config[:version] = 'new' 
+    Story.cache_config[:version] = 'new'
     Story.cache_key(1).should.equal 'Story:new:1'
   end
-  
+
   specify "should truncate the key normally if we dont have a namespace" do
     Story.stubs(:cache_namespace).returns(nil)
     key = "a" * 260
     Story.cache_key(key).length.should == 250
   end
-  
+
   specify "should truncate key with length over 250, including namespace if set" do
     Story.stubs(:cache_namespace).returns("37-power-moves-app" )
     key = "a" * 260
@@ -172,9 +172,9 @@ context "Passing an array of ids to get_cache" do
   include StoryCacheSpecSetup
 
   setup do
-    @grab_stories = proc do 
+    @grab_stories = proc do
       @stories = Story.get_cache(1, 2, 3)
-    end 
+    end
 
     @keys = 'Story:1', 'Story:2', 'Story:3'
     @hash = {
@@ -207,9 +207,9 @@ context "Passing an array of ids to get_cache using a cache which doesn't suppor
   include StoryCacheSpecSetup
 
   setup do
-    @grab_stories = proc do 
+    @grab_stories = proc do
       @stories = Story.get_cache(1, 2, 3)
-    end 
+    end
 
     # TODO: doh, probably need to clean this up...
     @cache = $with_memcache ? CACHE : $cache
@@ -240,7 +240,7 @@ context "A Ruby object acting as cached" do
     @story.should.have.cached :block
     @story.get_cache(:block).should.equal "this is a block"
   end
-  
+
   specify "should allow setting custom options by passing them to get_cache" do
     Story.expects(:set_cache).with('1:options', 'cached value', 1.hour)
     @story.get_cache(:options, :ttl => 1.hour) { 'cached value' }

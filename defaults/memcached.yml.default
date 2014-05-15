@@ -22,7 +22,7 @@ development:
   servers: localhost:11211
 
 # turn off caching
-test: 
+test:
   disabled: true
 
 production:
